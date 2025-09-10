@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_providers.dart';
 import '../../core/providers/notification_providers.dart';
 import '../../core/providers/role_providers.dart';
+import '../../core/providers/pin_providers.dart';
 import '../../core/widgets/app_logo.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -383,12 +384,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (authState.error != null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authState.error!),
-            backgroundColor: Colors.red,
-          ),
-        );
+        final errorMessage = authState.error!;
+
+        // Check if it's an approval status error
+        if (errorMessage.contains('pending admin approval') ||
+            errorMessage.contains('rejected') ||
+            errorMessage.contains('not approved')) {
+          // Navigate to pending approval screen
+          context.go(
+              '/auth/pending-approval?message=${Uri.encodeComponent(errorMessage)}');
+        } else {
+          // Show regular error snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } else if (authState.isSuccess) {
       if (mounted) {
@@ -397,6 +410,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ref.read(notificationNotifierProvider.notifier);
         notificationNotifier.requestPermission();
 
+        // Initialize PIN state and check if PIN authentication is needed
+        await ref.read(pinProvider.notifier).initialize();
+
         // Persist intended role if set; otherwise navigate to role selection
         final intendedRole = ref.read(intendedRoleProvider);
         if (intendedRole != null) {
@@ -404,18 +420,36 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             await ref
                 .read(authNotifierProvider.notifier)
                 .updateUserRole(intendedRole);
+
+            // Determine target route based on role
+            String targetRoute;
             switch (intendedRole) {
               case 'job_seeker':
-                context.go('/seeker/home');
+                targetRoute = '/seeker/home';
                 break;
               case 'employer':
-                context.go('/employer/dashboard');
+                targetRoute = '/employer/dashboard';
                 break;
               case 'admin':
-                context.go('/admin/panel');
+                targetRoute = '/admin/panel';
                 break;
               default:
-                context.go('/seeker/home');
+                targetRoute = '/seeker/home';
+            }
+
+            // Check PIN status and navigate accordingly
+            final pinState = ref.read(pinProvider);
+            if (!pinState.isSet) {
+              // PIN not set, go to PIN setup
+              context.go(
+                  '/auth/pin-setup?next=${Uri.encodeComponent(targetRoute)}');
+            } else if (!pinState.isVerified) {
+              // PIN set but not verified, go to PIN verification
+              context.go(
+                  '/auth/pin-verification?next=${Uri.encodeComponent(targetRoute)}');
+            } else {
+              // PIN verified, go to target route
+              context.go(targetRoute);
             }
           } catch (_) {
             context.go('/role');

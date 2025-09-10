@@ -294,10 +294,10 @@ class AdminDashboardPage extends ConsumerWidget {
             ),
             _buildAnalyticsCard(
               context,
-              'Suspended',
-              analytics.suspendedUsers.toString(),
-              Icons.block,
-              Colors.red,
+              'Pending Users',
+              analytics.pendingApprovals.toString(),
+              Icons.pending_actions,
+              Colors.orange,
             ),
           ],
         ),
@@ -436,11 +436,11 @@ class AdminDashboardPage extends ConsumerWidget {
           children: [
             _buildActionCard(
               context,
-              'Manage Users',
-              'View and moderate user accounts',
-              Icons.people_outline,
-              Colors.blue,
-              () => context.push('/admin/users'),
+              'User Approvals',
+              'Review pending registrations',
+              Icons.pending_actions,
+              Colors.orange,
+              () => context.push('/admin/approvals'),
             ),
             _buildActionCard(
               context,

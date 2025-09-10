@@ -29,6 +29,12 @@ class UserProfile with _$UserProfile {
     @Default(<String>[]) List<String> preferredCities,
     int? minSalaryPreferred,
 
+    // Admin approval status
+    @Default('pending') String approvalStatus, // pending, approved, rejected
+    DateTime? approvedAt,
+    String? approvedBy,
+    String? rejectionReason,
+
     // Email notification preferences
     @Default(true) bool emailNotifications,
     @Default(true) bool weeklyDigest,
@@ -64,6 +70,14 @@ class UserProfile with _$UserProfile {
       preferredCategories: List<String>.from(data['preferredCategories'] ?? []),
       preferredCities: List<String>.from(data['preferredCities'] ?? []),
       minSalaryPreferred: data['minSalaryPreferred']?.toInt(),
+
+      // Admin approval fields
+      approvalStatus: data['approvalStatus'] ?? 'pending',
+      approvedAt: data['approvedAt'] != null
+          ? (data['approvedAt'] as Timestamp).toDate()
+          : null,
+      approvedBy: data['approvedBy'],
+      rejectionReason: data['rejectionReason'],
 
       // Email notification preferences
       emailNotifications: data['emailNotifications'] ?? true,

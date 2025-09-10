@@ -50,6 +50,7 @@ class AdminAnalytics {
   final int totalApplications;
   final int pendingApplications;
   final int suspendedUsers;
+  final int pendingApprovals;
 
   AdminAnalytics({
     required this.totalUsers,
@@ -60,6 +61,7 @@ class AdminAnalytics {
     required this.totalApplications,
     required this.pendingApplications,
     required this.suspendedUsers,
+    required this.pendingApprovals,
   });
 }
 
@@ -187,6 +189,12 @@ final adminAnalyticsProvider = FutureProvider<AdminAnalytics>((ref) async {
           .where('suspended', isEqualTo: true)
           .count()
           .get(),
+      // Pending approvals
+      FirebaseService.firestore
+          .collection('users')
+          .where('approvalStatus', isEqualTo: 'pending')
+          .count()
+          .get(),
     ]);
 
     return AdminAnalytics(
@@ -198,6 +206,7 @@ final adminAnalyticsProvider = FutureProvider<AdminAnalytics>((ref) async {
       totalApplications: futures[5].count ?? 0,
       pendingApplications: futures[6].count ?? 0,
       suspendedUsers: futures[7].count ?? 0,
+      pendingApprovals: futures[8].count ?? 0,
     );
   } catch (e) {
     print('Error fetching admin analytics: $e');

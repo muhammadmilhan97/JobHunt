@@ -41,6 +41,12 @@ mixin _$UserProfile {
   List<String> get preferredCategories => throw _privateConstructorUsedError;
   List<String> get preferredCities => throw _privateConstructorUsedError;
   int? get minSalaryPreferred =>
+      throw _privateConstructorUsedError; // Admin approval status
+  String get approvalStatus =>
+      throw _privateConstructorUsedError; // pending, approved, rejected
+  DateTime? get approvedAt => throw _privateConstructorUsedError;
+  String? get approvedBy => throw _privateConstructorUsedError;
+  String? get rejectionReason =>
       throw _privateConstructorUsedError; // Email notification preferences
   bool get emailNotifications => throw _privateConstructorUsedError;
   bool get weeklyDigest => throw _privateConstructorUsedError;
@@ -85,6 +91,10 @@ abstract class $UserProfileCopyWith<$Res> {
       List<String> preferredCategories,
       List<String> preferredCities,
       int? minSalaryPreferred,
+      String approvalStatus,
+      DateTime? approvedAt,
+      String? approvedBy,
+      String? rejectionReason,
       bool emailNotifications,
       bool weeklyDigest,
       bool instantAlerts,
@@ -127,6 +137,10 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     Object? preferredCategories = null,
     Object? preferredCities = null,
     Object? minSalaryPreferred = freezed,
+    Object? approvalStatus = null,
+    Object? approvedAt = freezed,
+    Object? approvedBy = freezed,
+    Object? rejectionReason = freezed,
     Object? emailNotifications = null,
     Object? weeklyDigest = null,
     Object? instantAlerts = null,
@@ -217,6 +231,22 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
           ? _value.minSalaryPreferred
           : minSalaryPreferred // ignore: cast_nullable_to_non_nullable
               as int?,
+      approvalStatus: null == approvalStatus
+          ? _value.approvalStatus
+          : approvalStatus // ignore: cast_nullable_to_non_nullable
+              as String,
+      approvedAt: freezed == approvedAt
+          ? _value.approvedAt
+          : approvedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      approvedBy: freezed == approvedBy
+          ? _value.approvedBy
+          : approvedBy // ignore: cast_nullable_to_non_nullable
+              as String?,
+      rejectionReason: freezed == rejectionReason
+          ? _value.rejectionReason
+          : rejectionReason // ignore: cast_nullable_to_non_nullable
+              as String?,
       emailNotifications: null == emailNotifications
           ? _value.emailNotifications
           : emailNotifications // ignore: cast_nullable_to_non_nullable
@@ -267,6 +297,10 @@ abstract class _$$UserProfileImplCopyWith<$Res>
       List<String> preferredCategories,
       List<String> preferredCities,
       int? minSalaryPreferred,
+      String approvalStatus,
+      DateTime? approvedAt,
+      String? approvedBy,
+      String? rejectionReason,
       bool emailNotifications,
       bool weeklyDigest,
       bool instantAlerts,
@@ -307,6 +341,10 @@ class __$$UserProfileImplCopyWithImpl<$Res>
     Object? preferredCategories = null,
     Object? preferredCities = null,
     Object? minSalaryPreferred = freezed,
+    Object? approvalStatus = null,
+    Object? approvedAt = freezed,
+    Object? approvedBy = freezed,
+    Object? rejectionReason = freezed,
     Object? emailNotifications = null,
     Object? weeklyDigest = null,
     Object? instantAlerts = null,
@@ -397,6 +435,22 @@ class __$$UserProfileImplCopyWithImpl<$Res>
           ? _value.minSalaryPreferred
           : minSalaryPreferred // ignore: cast_nullable_to_non_nullable
               as int?,
+      approvalStatus: null == approvalStatus
+          ? _value.approvalStatus
+          : approvalStatus // ignore: cast_nullable_to_non_nullable
+              as String,
+      approvedAt: freezed == approvedAt
+          ? _value.approvedAt
+          : approvedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      approvedBy: freezed == approvedBy
+          ? _value.approvedBy
+          : approvedBy // ignore: cast_nullable_to_non_nullable
+              as String?,
+      rejectionReason: freezed == rejectionReason
+          ? _value.rejectionReason
+          : rejectionReason // ignore: cast_nullable_to_non_nullable
+              as String?,
       emailNotifications: null == emailNotifications
           ? _value.emailNotifications
           : emailNotifications // ignore: cast_nullable_to_non_nullable
@@ -442,6 +496,10 @@ class _$UserProfileImpl implements _UserProfile {
       final List<String> preferredCategories = const <String>[],
       final List<String> preferredCities = const <String>[],
       this.minSalaryPreferred,
+      this.approvalStatus = 'pending',
+      this.approvedAt,
+      this.approvedBy,
+      this.rejectionReason,
       this.emailNotifications = true,
       this.weeklyDigest = true,
       this.instantAlerts = true,
@@ -516,6 +574,17 @@ class _$UserProfileImpl implements _UserProfile {
 
   @override
   final int? minSalaryPreferred;
+// Admin approval status
+  @override
+  @JsonKey()
+  final String approvalStatus;
+// pending, approved, rejected
+  @override
+  final DateTime? approvedAt;
+  @override
+  final String? approvedBy;
+  @override
+  final String? rejectionReason;
 // Email notification preferences
   @override
   @JsonKey()
@@ -532,7 +601,7 @@ class _$UserProfileImpl implements _UserProfile {
 
   @override
   String toString() {
-    return 'UserProfile(id: $id, role: $role, name: $name, email: $email, phone: $phone, cnic: $cnic, city: $city, country: $country, address: $address, experienceYears: $experienceYears, skills: $skills, expectedSalary: $expectedSalary, companyName: $companyName, website: $website, about: $about, cvUrl: $cvUrl, profilePhotoUrl: $profilePhotoUrl, companyLogoUrl: $companyLogoUrl, preferredCategories: $preferredCategories, preferredCities: $preferredCities, minSalaryPreferred: $minSalaryPreferred, emailNotifications: $emailNotifications, weeklyDigest: $weeklyDigest, instantAlerts: $instantAlerts, jobPostingNotifications: $jobPostingNotifications)';
+    return 'UserProfile(id: $id, role: $role, name: $name, email: $email, phone: $phone, cnic: $cnic, city: $city, country: $country, address: $address, experienceYears: $experienceYears, skills: $skills, expectedSalary: $expectedSalary, companyName: $companyName, website: $website, about: $about, cvUrl: $cvUrl, profilePhotoUrl: $profilePhotoUrl, companyLogoUrl: $companyLogoUrl, preferredCategories: $preferredCategories, preferredCities: $preferredCities, minSalaryPreferred: $minSalaryPreferred, approvalStatus: $approvalStatus, approvedAt: $approvedAt, approvedBy: $approvedBy, rejectionReason: $rejectionReason, emailNotifications: $emailNotifications, weeklyDigest: $weeklyDigest, instantAlerts: $instantAlerts, jobPostingNotifications: $jobPostingNotifications)';
   }
 
   @override
@@ -569,6 +638,14 @@ class _$UserProfileImpl implements _UserProfile {
                 .equals(other._preferredCities, _preferredCities) &&
             (identical(other.minSalaryPreferred, minSalaryPreferred) ||
                 other.minSalaryPreferred == minSalaryPreferred) &&
+            (identical(other.approvalStatus, approvalStatus) ||
+                other.approvalStatus == approvalStatus) &&
+            (identical(other.approvedAt, approvedAt) ||
+                other.approvedAt == approvedAt) &&
+            (identical(other.approvedBy, approvedBy) ||
+                other.approvedBy == approvedBy) &&
+            (identical(other.rejectionReason, rejectionReason) ||
+                other.rejectionReason == rejectionReason) &&
             (identical(other.emailNotifications, emailNotifications) ||
                 other.emailNotifications == emailNotifications) &&
             (identical(other.weeklyDigest, weeklyDigest) ||
@@ -605,6 +682,10 @@ class _$UserProfileImpl implements _UserProfile {
         const DeepCollectionEquality().hash(_preferredCategories),
         const DeepCollectionEquality().hash(_preferredCities),
         minSalaryPreferred,
+        approvalStatus,
+        approvedAt,
+        approvedBy,
+        rejectionReason,
         emailNotifications,
         weeklyDigest,
         instantAlerts,
@@ -650,6 +731,10 @@ abstract class _UserProfile implements UserProfile {
       final List<String> preferredCategories,
       final List<String> preferredCities,
       final int? minSalaryPreferred,
+      final String approvalStatus,
+      final DateTime? approvedAt,
+      final String? approvedBy,
+      final String? rejectionReason,
       final bool emailNotifications,
       final bool weeklyDigest,
       final bool instantAlerts,
@@ -699,7 +784,15 @@ abstract class _UserProfile implements UserProfile {
   @override
   List<String> get preferredCities;
   @override
-  int? get minSalaryPreferred; // Email notification preferences
+  int? get minSalaryPreferred; // Admin approval status
+  @override
+  String get approvalStatus; // pending, approved, rejected
+  @override
+  DateTime? get approvedAt;
+  @override
+  String? get approvedBy;
+  @override
+  String? get rejectionReason; // Email notification preferences
   @override
   bool get emailNotifications;
   @override

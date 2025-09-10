@@ -36,6 +36,12 @@ _$UserProfileImpl _$$UserProfileImplFromJson(Map<String, dynamic> json) =>
               .toList() ??
           const <String>[],
       minSalaryPreferred: (json['minSalaryPreferred'] as num?)?.toInt(),
+      approvalStatus: json['approvalStatus'] as String? ?? 'pending',
+      approvedAt: json['approvedAt'] == null
+          ? null
+          : DateTime.parse(json['approvedAt'] as String),
+      approvedBy: json['approvedBy'] as String?,
+      rejectionReason: json['rejectionReason'] as String?,
       emailNotifications: json['emailNotifications'] as bool? ?? true,
       weeklyDigest: json['weeklyDigest'] as bool? ?? true,
       instantAlerts: json['instantAlerts'] as bool? ?? true,
@@ -65,6 +71,10 @@ Map<String, dynamic> _$$UserProfileImplToJson(_$UserProfileImpl instance) =>
       'preferredCategories': instance.preferredCategories,
       'preferredCities': instance.preferredCities,
       'minSalaryPreferred': instance.minSalaryPreferred,
+      'approvalStatus': instance.approvalStatus,
+      'approvedAt': instance.approvedAt?.toIso8601String(),
+      'approvedBy': instance.approvedBy,
+      'rejectionReason': instance.rejectionReason,
       'emailNotifications': instance.emailNotifications,
       'weeklyDigest': instance.weeklyDigest,
       'instantAlerts': instance.instantAlerts,

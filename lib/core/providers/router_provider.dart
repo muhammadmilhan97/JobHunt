@@ -6,6 +6,9 @@ import '../../features/auth/register_page.dart';
 import '../../features/auth/role_select_page.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/pin_setup_screen.dart';
+import '../../features/auth/screens/pin_verification_screen.dart';
+import '../../features/auth/screens/pending_approval_screen.dart';
 import '../../features/seeker/home/seeker_home_page.dart';
 import '../../features/seeker/home/seeker_shell.dart';
 import '../../features/seeker/job_detail/job_detail_page.dart';
@@ -17,6 +20,7 @@ import '../../features/employer/applicants/applicants_list_page.dart';
 import '../../features/admin/admin_dashboard_page.dart';
 import '../../features/admin/user_management_page.dart';
 import '../../features/admin/job_moderation_page.dart';
+import '../../features/admin/user_approval_page.dart';
 import '../../features/seeker/applications/my_applications_page.dart';
 import '../../features/seeker/applications/application_detail_page.dart';
 import '../../features/seeker/profile/seeker_profile_page.dart';
@@ -28,7 +32,7 @@ import '../services/firebase_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/role',
+    initialLocation: '/',
     routes: [
       // Splash Route
       GoRoute(
@@ -54,6 +58,34 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth/forgot-password',
         name: 'forgot-password',
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+
+      GoRoute(
+        path: '/auth/pin-setup',
+        name: 'pin-setup',
+        builder: (context, state) {
+          final nextRoute = state.uri.queryParameters['next'];
+          return PinSetupScreen(nextRoute: nextRoute);
+        },
+      ),
+
+      GoRoute(
+        path: '/auth/pin-verification',
+        name: 'pin-verification',
+        builder: (context, state) {
+          final nextRoute = state.uri.queryParameters['next'];
+          return PinVerificationScreen(nextRoute: nextRoute);
+        },
+      ),
+
+      GoRoute(
+        path: '/auth/pending-approval',
+        name: 'pending-approval',
+        builder: (context, state) {
+          final message = state.uri.queryParameters['message'] ??
+              'Your account is pending admin approval.';
+          return PendingApprovalScreen(message: message);
+        },
       ),
 
       GoRoute(
@@ -190,6 +222,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/jobs',
         name: 'admin-jobs',
         builder: (context, state) => const JobModerationPage(),
+      ),
+
+      GoRoute(
+        path: '/admin/approvals',
+        name: 'admin-approvals',
+        builder: (context, state) => const UserApprovalPage(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

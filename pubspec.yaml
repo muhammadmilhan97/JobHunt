@@ -60,6 +60,7 @@ dependencies:
   url_launcher: ^6.2.4
   timeago: ^3.7.0
   shared_preferences: ^2.5.3
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 class SeekerShell extends StatefulWidget {
@@ -32,31 +33,62 @@ class _SeekerShellState extends State<SeekerShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: widget.child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _onTap,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined), 
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        _showExitConfirmation(context);
+      },
+      child: Scaffold(
+        body: widget.child,
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: _onTap,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.favorite_border),
+              selectedIcon: Icon(Icons.favorite),
+              label: 'Favorites',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.assignment_outlined),
+              selectedIcon: Icon(Icons.assignment),
+              label: 'Applications',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Profile',
+            ),
+          ],
+        ),
+      ),
+    ); // End PopScope
+  }
+
+  void _showExitConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit JobHunt?'),
+        content: const Text('Are you sure you want to exit the app?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.favorite_border), 
-            selectedIcon: Icon(Icons.favorite),
-            label: 'Favorites',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assignment_outlined), 
-            selectedIcon: Icon(Icons.assignment),
-            label: 'Applications',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline), 
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Exit the app
+              SystemNavigator.pop();
+            },
+            child: const Text('Exit'),
           ),
         ],
       ),

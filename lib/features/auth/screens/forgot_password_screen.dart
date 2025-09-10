@@ -98,6 +98,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         title: const Text('Reset Password'),
         centerTitle: true,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/auth'),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

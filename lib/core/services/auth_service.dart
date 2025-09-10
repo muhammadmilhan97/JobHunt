@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'firebase_service.dart';
 import 'analytics_service.dart';
 import 'email_service.dart';
+import 'pin_service.dart';
 // import 'otp_service.dart';
 import '../config/email_config.dart';
 import '../models/models.dart';
@@ -43,12 +44,21 @@ class AuthService {
             .get();
 
         if (userDoc.exists) {
-          final role = userDoc.data()?['role'] ?? 'unknown';
+          final userData = userDoc.data()!;
+          final role = userData['role'] ?? 'unknown';
+          final approvalStatus = userData['approvalStatus'] ?? 'pending';
+
+          // Check if user is approved
+          if (approvalStatus != 'approved') {
+            await _auth.signOut(); // Sign out the user
+            throw Exception(_getApprovalStatusMessage(approvalStatus));
+          }
+
           await AnalyticsService.logLogin(role: role);
           await AnalyticsService.setUserProperties(
             userId: credential.user!.uid,
             role: role,
-            city: userDoc.data()?['city'],
+            city: userData['city'],
           );
         }
       }
@@ -80,6 +90,11 @@ class AuthService {
           'role': role,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
+          // Admin approval status (pending by default)
+          'approvalStatus': 'pending',
+          'approvedAt': null,
+          'approvedBy': null,
+          'rejectionReason': null,
           // Email notification preferences (default to enabled)
           'emailNotifications': true,
           'weeklyDigest': role == 'job_seeker',
@@ -120,6 +135,9 @@ class AuthService {
     try {
       // Clear analytics user properties before signing out
       await AnalyticsService.clearUserProperties();
+
+      // Clear PIN data
+      await PinService.clearPinData();
 
       await _auth.signOut();
     } catch (e) {
@@ -231,6 +249,18 @@ class AuthService {
       });
     } catch (e) {
       rethrow;
+    }
+  }
+
+  /// Get user-friendly approval status message
+  static String _getApprovalStatusMessage(String status) {
+    switch (status) {
+      case 'pending':
+        return 'Your account is pending admin approval. Please wait for approval before signing in.';
+      case 'rejected':
+        return 'Your account has been rejected. Please contact support for more information.';
+      default:
+        return 'Your account is not approved. Please contact support.';
     }
   }
 }
