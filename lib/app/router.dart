@@ -4,6 +4,7 @@ import '../features/auth/login_page.dart';
 import '../features/auth/register_page.dart';
 import '../features/auth/role_select_page.dart';
 import '../features/auth/screens/splash_screen.dart';
+import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/seeker/home/seeker_home_page.dart';
 import '../features/seeker/job_detail/job_detail_page.dart';
 import '../features/employer/dashboard/employer_dashboard_page.dart';
@@ -31,6 +32,12 @@ final GoRouter appRouter = GoRouter(
       path: '/auth/register',
       name: 'register',
       builder: (context, state) => const RegisterPage(),
+    ),
+
+    GoRoute(
+      path: '/auth/forgot-password',
+      name: 'forgot-password',
+      builder: (context, state) => const ForgotPasswordScreen(),
     ),
 
     GoRoute(
