@@ -21,18 +21,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   _checkAuthAndNavigate() async {
-    await Future.delayed(const Duration(seconds: 2));
+    print('🚀 Splash screen started - will display for 4 seconds');
+    await Future.delayed(const Duration(seconds: 4));
 
     if (!mounted) return;
 
+    print('✅ Splash screen completed, checking authentication...');
     // Check if user is already authenticated
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      // Not authenticated, go to auth
-      context.go('/auth');
+      // Not authenticated, go to role selection first
+      print('👤 No user authenticated, navigating to role selection');
+      context.go('/role');
       return;
     }
+
+    print('👤 User already authenticated: ${currentUser.uid}');
 
     try {
       // User is authenticated, check their role and PIN status
