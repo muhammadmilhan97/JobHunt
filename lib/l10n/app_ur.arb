@@ -1,0 +1,372 @@
+{
+  "@@locale": "ur",
+  "appTitle": "جاب ہنٹ",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  
+  "home": "ہوم",
+  "@home": {
+    "description": "Home page title"
+  },
+  "favorites": "پسندیدہ",
+  "@favorites": {
+    "description": "Favorites page title"
+  },
+  "applications": "درخواستیں",
+  "@applications": {
+    "description": "Applications page title"
+  },
+  "profile": "پروفائل",
+  "@profile": {
+    "description": "Profile page title"
+  },
+  "dashboard": "ڈیش بورڈ",
+  "@dashboard": {
+    "description": "Dashboard page title"
+  },
+  "postJob": "جاب پوسٹ کریں",
+  "@postJob": {
+    "description": "Post job page title"
+  },
+  "myJobs": "میری نوکریاں",
+  "@myJobs": {
+    "description": "My jobs page title"
+  },
+  "applicants": "درخواست دہندگان",
+  "@applicants": {
+    "description": "Applicants page title"
+  },
+  "notifications": "نوٹیفیکیشنز",
+  "@notifications": {
+    "description": "Notifications page title"
+  },
+  "settings": "ترتیبات",
+  "@settings": {
+    "description": "Settings page title"
+  },
+  "admin": "ایڈمن",
+  "@admin": {
+    "description": "Admin page title"
+  },
+  
+  "apply": "درخواست دیں",
+  "@apply": {
+    "description": "Apply button text"
+  },
+  "save": "محفوظ کریں",
+  "@save": {
+    "description": "Save button text"
+  },
+  "cancel": "منسوخ کریں",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+  "delete": "حذف کریں",
+  "@delete": {
+    "description": "Delete button text"
+  },
+  "edit": "ترمیم کریں",
+  "@edit": {
+    "description": "Edit button text"
+  },
+  "filters": "فلٹرز",
+  "@filters": {
+    "description": "Filters button text"
+  },
+  "clearAll": "سب صاف کریں",
+  "@clearAll": {
+    "description": "Clear all filters button text"
+  },
+  "search": "تلاش کریں",
+  "@search": {
+    "description": "Search button text"
+  },
+  "login": "لاگ ان",
+  "@login": {
+    "description": "Login button text"
+  },
+  "register": "رجسٹر کریں",
+  "@register": {
+    "description": "Register button text"
+  },
+  "signOut": "سائن آؤٹ",
+  "@signOut": {
+    "description": "Sign out button text"
+  },
+  "uploadCV": "سی وی اپلوڈ کریں",
+  "@uploadCV": {
+    "description": "Upload CV button text"
+  },
+  "replaceCV": "سی وی تبدیل کریں",
+  "@replaceCV": {
+    "description": "Replace CV button text"
+  },
+  "uploadLogo": "لوگو اپلوڈ کریں",
+  "@uploadLogo": {
+    "description": "Upload logo button text"
+  },
+  "viewCV": "سی وی دیکھیں",
+  "@viewCV": {
+    "description": "View CV button text"
+  },
+  "back": "واپس",
+  "@back": {
+    "description": "Back button text"
+  },
+  "next": "اگلا",
+  "@next": {
+    "description": "Next button text"
+  },
+  "submit": "جمع کریں",
+  "@submit": {
+    "description": "Submit button text"
+  },
+  "update": "اپڈیٹ کریں",
+  "@update": {
+    "description": "Update button text"
+  },
+  "confirm": "تصدیق کریں",
+  "@confirm": {
+    "description": "Confirm button text"
+  },
+  "retry": "دوبارہ کوشش کریں",
+  "@retry": {
+    "description": "Retry button text"
+  },
+  
+  "noResults": "کوئی نتیجہ نہیں ملا",
+  "@noResults": {
+    "description": "Message shown when no results are found"
+  },
+  "tryAdjustingFilters": "اپنے فلٹرز کو ایڈجسٹ کرنے کی کوشش کریں",
+  "@tryAdjustingFilters": {
+    "description": "Message suggesting to adjust filters"
+  },
+  "noJobsAvailable": "فی الوقت کوئی نوکریاں دستیاب نہیں ہیں",
+  "@noJobsAvailable": {
+    "description": "Message when no jobs are available"
+  },
+  "noApplications": "ابھی تک کوئی درخواست نہیں",
+  "@noApplications": {
+    "description": "Message when no applications exist"
+  },
+  "noFavorites": "ابھی تک کوئی پسندیدہ نوکری نہیں",
+  "@noFavorites": {
+    "description": "Message when no favorite jobs exist"
+  },
+  "noNotifications": "کوئی نوٹیفیکیشن نہیں",
+  "@noNotifications": {
+    "description": "Message when no notifications exist"
+  },
+  "loading": "لوڈ ہو رہا ہے...",
+  "@loading": {
+    "description": "Loading message"
+  },
+  "errorOccurred": "ایک خرابی پیش آئی",
+  "@errorOccurred": {
+    "description": "Generic error message"
+  },
+  "tryAgain": "براہ کرم دوبارہ کوشش کریں",
+  "@tryAgain": {
+    "description": "Message asking user to try again"
+  },
+  "success": "کامیاب",
+  "@success": {
+    "description": "Success message"
+  },
+  "jobPostedSuccessfully": "نوکری کامیابی سے پوسٹ ہو گئی",
+  "@jobPostedSuccessfully": {
+    "description": "Message when job is posted successfully"
+  },
+  "applicationSubmitted": "درخواست کامیابی سے جمع ہو گئی",
+  "@applicationSubmitted": {
+    "description": "Message when application is submitted"
+  },
+  "profileUpdated": "پروفائل کامیابی سے اپڈیٹ ہو گئی",
+  "@profileUpdated": {
+    "description": "Message when profile is updated"
+  },
+  "jobSaved": "نوکری پسندیدہ میں محفوظ ہو گئی",
+  "@jobSaved": {
+    "description": "Message when job is saved"
+  },
+  "jobRemoved": "نوکری پسندیدہ سے ہٹا دی گئی",
+  "@jobRemoved": {
+    "description": "Message when job is removed from favorites"
+  },
+  "undo": "واپس لیں",
+  "@undo": {
+    "description": "Undo action text"
+  },
+  
+  "pending": "زیر التوا",
+  "@pending": {
+    "description": "Application status - pending"
+  },
+  "reviewing": "جائزہ لیا جا رہا ہے",
+  "@reviewing": {
+    "description": "Application status - reviewing"
+  },
+  "shortlisted": "شارٹ لسٹ",
+  "@shortlisted": {
+    "description": "Application status - shortlisted"
+  },
+  "interview": "انٹرویو",
+  "@interview": {
+    "description": "Application status - interview"
+  },
+  "hired": "ملازم رکھا گیا",
+  "@hired": {
+    "description": "Application status - hired"
+  },
+  "rejected": "مسترد",
+  "@rejected": {
+    "description": "Application status - rejected"
+  },
+  "withdrawn": "واپس لیا گیا",
+  "@withdrawn": {
+    "description": "Application status - withdrawn"
+  },
+  
+  "fullTime": "فل ٹائم",
+  "@fullTime": {
+    "description": "Job type - full time"
+  },
+  "partTime": "پارٹ ٹائم",
+  "@partTime": {
+    "description": "Job type - part time"
+  },
+  "contract": "کنٹریکٹ",
+  "@contract": {
+    "description": "Job type - contract"
+  },
+  "internship": "انٹرن شپ",
+  "@internship": {
+    "description": "Job type - internship"
+  },
+  "freelance": "فری لانس",
+  "@freelance": {
+    "description": "Job type - freelance"
+  },
+  
+  "jobSeeker": "نوکری تلاش کرنے والا",
+  "@jobSeeker": {
+    "description": "User role - job seeker"
+  },
+  "employer": "آجر",
+  "@employer": {
+    "description": "User role - employer"
+  },
+  "admin": "منتظم",
+  "@admin": {
+    "description": "User role - admin"
+  },
+  
+  "language": "زبان",
+  "@language": {
+    "description": "Language setting label"
+  },
+  "english": "English",
+  "@english": {
+    "description": "English language option"
+  },
+  "urdu": "اردو",
+  "@urdu": {
+    "description": "Urdu language option"
+  },
+  "systemDefault": "سسٹم ڈیفالٹ",
+  "@systemDefault": {
+    "description": "System default language option"
+  },
+  
+  "accessibility": "رسائی",
+  "@accessibility": {
+    "description": "Accessibility settings section"
+  },
+  "highContrast": "ہائی کنٹراسٹ",
+  "@highContrast": {
+    "description": "High contrast mode setting"
+  },
+  "largeText": "بڑا ٹیکسٹ",
+  "@largeText": {
+    "description": "Large text mode setting"
+  },
+  "reduceMotion": "موشن کم کریں",
+  "@reduceMotion": {
+    "description": "Reduce motion setting"
+  },
+  
+  "saveJob": "نوکری محفوظ کریں",
+  "@saveJob": {
+    "description": "Semantic label for save job icon"
+  },
+  "backNavigation": "واپس",
+  "@backNavigation": {
+    "description": "Semantic label for back navigation"
+  },
+  "openCV": "سی وی کھولیں",
+  "@openCV": {
+    "description": "Semantic label for open CV action"
+  },
+  "filterJobs": "نوکریاں فلٹر کریں",
+  "@filterJobs": {
+    "description": "Semantic label for filter jobs action"
+  },
+  "searchJobs": "نوکریاں تلاش کریں",
+  "@searchJobs": {
+    "description": "Semantic label for search jobs action"
+  },
+  "applyForJob": "نوکری کے لیے درخواست دیں",
+  "@applyForJob": {
+    "description": "Semantic label for apply for job action"
+  },
+  "viewJobDetails": "نوکری کی تفصیلات دیکھیں",
+  "@viewJobDetails": {
+    "description": "Semantic label for view job details action"
+  },
+  "viewApplication": "درخواست دیکھیں",
+  "@viewApplication": {
+    "description": "Semantic label for view application action"
+  },
+  "updateStatus": "حیثیت اپڈیٹ کریں",
+  "@updateStatus": {
+    "description": "Semantic label for update status action"
+  },
+  "deleteJob": "نوکری حذف کریں",
+  "@deleteJob": {
+    "description": "Semantic label for delete job action"
+  },
+  "editJob": "نوکری ترمیم کریں",
+  "@editJob": {
+    "description": "Semantic label for edit job action"
+  },
+  "uploadFile": "فائل اپلوڈ کریں",
+  "@uploadFile": {
+    "description": "Semantic label for upload file action"
+  },
+  "selectLanguage": "زبان منتخب کریں",
+  "@selectLanguage": {
+    "description": "Semantic label for language selection"
+  },
+  "toggleTheme": "تھیم تبدیل کریں",
+  "@toggleTheme": {
+    "description": "Semantic label for theme toggle"
+  },
+  "menu": "مینو",
+  "@menu": {
+    "description": "Semantic label for menu button"
+  },
+  "close": "بند کریں",
+  "@close": {
+    "description": "Semantic label for close button"
+  },
+  "notifications": "نوٹیفیکیشنز",
+  "@notifications": {
+    "description": "Semantic label for notifications"
+  },
+  "unreadNotifications": "نہ پڑھی گئی نوٹیفیکیشنز",
+  "@unreadNotifications": {
+    "description": "Semantic label for unread notifications"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "489751560548",
+    "project_id": "jobhunt-dev-7b0ae",
+    "storage_bucket": "jobhunt-dev-7b0ae.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:489751560548:android:6b3572eceab17d955cfa71",
+        "android_client_info": {
+          "package_name": "com.jobhunt.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCntBZb01SWCtE25yPAEyjgld51m77od5w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

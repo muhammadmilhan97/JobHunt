@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow creation of user documents during registration
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to read all jobs
+    match /jobs/{jobId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        resource.data.employerId == request.auth.uid ||
+        request.auth.token.admin == true
+      );
+    }
+    
+    // Allow users to manage their own applications
+    match /applications/{applicationId} {
+      allow read, write: if request.auth != null && (
+        resource.data.seekerId == request.auth.uid ||
+        resource.data.employerId == request.auth.uid
+      );
+    }
+    
+    // Allow users to read and write their own notifications
+    match /users/{userId}/notifications/{notificationId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow users to manage their own FCM tokens
+    match /users/{userId}/fcmTokens/{tokenId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to read job categories
+    match /categories/{categoryId} {
+      allow read: if request.auth != null;
+    }
+    
+    // Development: Allow all authenticated users to read/write (temporary)
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

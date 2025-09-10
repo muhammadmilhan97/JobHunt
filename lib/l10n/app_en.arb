@@ -1,0 +1,372 @@
+{
+  "@@locale": "en",
+  "appTitle": "JobHunt",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  
+  "home": "Home",
+  "@home": {
+    "description": "Home page title"
+  },
+  "favorites": "Favorites",
+  "@favorites": {
+    "description": "Favorites page title"
+  },
+  "applications": "Applications",
+  "@applications": {
+    "description": "Applications page title"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile page title"
+  },
+  "dashboard": "Dashboard",
+  "@dashboard": {
+    "description": "Dashboard page title"
+  },
+  "postJob": "Post Job",
+  "@postJob": {
+    "description": "Post job page title"
+  },
+  "myJobs": "My Jobs",
+  "@myJobs": {
+    "description": "My jobs page title"
+  },
+  "applicants": "Applicants",
+  "@applicants": {
+    "description": "Applicants page title"
+  },
+  "notifications": "Notifications",
+  "@notifications": {
+    "description": "Notifications page title"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings page title"
+  },
+  "admin": "Admin",
+  "@admin": {
+    "description": "Admin page title"
+  },
+  
+  "apply": "Apply",
+  "@apply": {
+    "description": "Apply button text"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Save button text"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Delete button text"
+  },
+  "edit": "Edit",
+  "@edit": {
+    "description": "Edit button text"
+  },
+  "filters": "Filters",
+  "@filters": {
+    "description": "Filters button text"
+  },
+  "clearAll": "Clear All",
+  "@clearAll": {
+    "description": "Clear all filters button text"
+  },
+  "search": "Search",
+  "@search": {
+    "description": "Search button text"
+  },
+  "login": "Login",
+  "@login": {
+    "description": "Login button text"
+  },
+  "register": "Register",
+  "@register": {
+    "description": "Register button text"
+  },
+  "signOut": "Sign Out",
+  "@signOut": {
+    "description": "Sign out button text"
+  },
+  "uploadCV": "Upload CV",
+  "@uploadCV": {
+    "description": "Upload CV button text"
+  },
+  "replaceCV": "Replace CV",
+  "@replaceCV": {
+    "description": "Replace CV button text"
+  },
+  "uploadLogo": "Upload Logo",
+  "@uploadLogo": {
+    "description": "Upload logo button text"
+  },
+  "viewCV": "View CV",
+  "@viewCV": {
+    "description": "View CV button text"
+  },
+  "back": "Back",
+  "@back": {
+    "description": "Back button text"
+  },
+  "next": "Next",
+  "@next": {
+    "description": "Next button text"
+  },
+  "submit": "Submit",
+  "@submit": {
+    "description": "Submit button text"
+  },
+  "update": "Update",
+  "@update": {
+    "description": "Update button text"
+  },
+  "confirm": "Confirm",
+  "@confirm": {
+    "description": "Confirm button text"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button text"
+  },
+  
+  "noResults": "No results found",
+  "@noResults": {
+    "description": "Message shown when no results are found"
+  },
+  "tryAdjustingFilters": "Try adjusting your filters",
+  "@tryAdjustingFilters": {
+    "description": "Message suggesting to adjust filters"
+  },
+  "noJobsAvailable": "No jobs available at the moment",
+  "@noJobsAvailable": {
+    "description": "Message when no jobs are available"
+  },
+  "noApplications": "No applications yet",
+  "@noApplications": {
+    "description": "Message when no applications exist"
+  },
+  "noFavorites": "No favorite jobs yet",
+  "@noFavorites": {
+    "description": "Message when no favorite jobs exist"
+  },
+  "noNotifications": "No notifications",
+  "@noNotifications": {
+    "description": "Message when no notifications exist"
+  },
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Loading message"
+  },
+  "errorOccurred": "An error occurred",
+  "@errorOccurred": {
+    "description": "Generic error message"
+  },
+  "tryAgain": "Please try again",
+  "@tryAgain": {
+    "description": "Message asking user to try again"
+  },
+  "success": "Success",
+  "@success": {
+    "description": "Success message"
+  },
+  "jobPostedSuccessfully": "Job posted successfully",
+  "@jobPostedSuccessfully": {
+    "description": "Message when job is posted successfully"
+  },
+  "applicationSubmitted": "Application submitted successfully",
+  "@applicationSubmitted": {
+    "description": "Message when application is submitted"
+  },
+  "profileUpdated": "Profile updated successfully",
+  "@profileUpdated": {
+    "description": "Message when profile is updated"
+  },
+  "jobSaved": "Job saved to favorites",
+  "@jobSaved": {
+    "description": "Message when job is saved"
+  },
+  "jobRemoved": "Job removed from favorites",
+  "@jobRemoved": {
+    "description": "Message when job is removed from favorites"
+  },
+  "undo": "Undo",
+  "@undo": {
+    "description": "Undo action text"
+  },
+  
+  "pending": "Pending",
+  "@pending": {
+    "description": "Application status - pending"
+  },
+  "reviewing": "Reviewing",
+  "@reviewing": {
+    "description": "Application status - reviewing"
+  },
+  "shortlisted": "Shortlisted",
+  "@shortlisted": {
+    "description": "Application status - shortlisted"
+  },
+  "interview": "Interview",
+  "@interview": {
+    "description": "Application status - interview"
+  },
+  "hired": "Hired",
+  "@hired": {
+    "description": "Application status - hired"
+  },
+  "rejected": "Rejected",
+  "@rejected": {
+    "description": "Application status - rejected"
+  },
+  "withdrawn": "Withdrawn",
+  "@withdrawn": {
+    "description": "Application status - withdrawn"
+  },
+  
+  "fullTime": "Full-time",
+  "@fullTime": {
+    "description": "Job type - full time"
+  },
+  "partTime": "Part-time",
+  "@partTime": {
+    "description": "Job type - part time"
+  },
+  "contract": "Contract",
+  "@contract": {
+    "description": "Job type - contract"
+  },
+  "internship": "Internship",
+  "@internship": {
+    "description": "Job type - internship"
+  },
+  "freelance": "Freelance",
+  "@freelance": {
+    "description": "Job type - freelance"
+  },
+  
+  "jobSeeker": "Job Seeker",
+  "@jobSeeker": {
+    "description": "User role - job seeker"
+  },
+  "employer": "Employer",
+  "@employer": {
+    "description": "User role - employer"
+  },
+  "admin": "Administrator",
+  "@admin": {
+    "description": "User role - admin"
+  },
+  
+  "language": "Language",
+  "@language": {
+    "description": "Language setting label"
+  },
+  "english": "English",
+  "@english": {
+    "description": "English language option"
+  },
+  "urdu": "اردو",
+  "@urdu": {
+    "description": "Urdu language option"
+  },
+  "systemDefault": "System Default",
+  "@systemDefault": {
+    "description": "System default language option"
+  },
+  
+  "accessibility": "Accessibility",
+  "@accessibility": {
+    "description": "Accessibility settings section"
+  },
+  "highContrast": "High Contrast",
+  "@highContrast": {
+    "description": "High contrast mode setting"
+  },
+  "largeText": "Large Text",
+  "@largeText": {
+    "description": "Large text mode setting"
+  },
+  "reduceMotion": "Reduce Motion",
+  "@reduceMotion": {
+    "description": "Reduce motion setting"
+  },
+  
+  "saveJob": "Save Job",
+  "@saveJob": {
+    "description": "Semantic label for save job icon"
+  },
+  "backNavigation": "Back",
+  "@backNavigation": {
+    "description": "Semantic label for back navigation"
+  },
+  "openCV": "Open CV",
+  "@openCV": {
+    "description": "Semantic label for open CV action"
+  },
+  "filterJobs": "Filter Jobs",
+  "@filterJobs": {
+    "description": "Semantic label for filter jobs action"
+  },
+  "searchJobs": "Search Jobs",
+  "@searchJobs": {
+    "description": "Semantic label for search jobs action"
+  },
+  "applyForJob": "Apply for Job",
+  "@applyForJob": {
+    "description": "Semantic label for apply for job action"
+  },
+  "viewJobDetails": "View Job Details",
+  "@viewJobDetails": {
+    "description": "Semantic label for view job details action"
+  },
+  "viewApplication": "View Application",
+  "@viewApplication": {
+    "description": "Semantic label for view application action"
+  },
+  "updateStatus": "Update Status",
+  "@updateStatus": {
+    "description": "Semantic label for update status action"
+  },
+  "deleteJob": "Delete Job",
+  "@deleteJob": {
+    "description": "Semantic label for delete job action"
+  },
+  "editJob": "Edit Job",
+  "@editJob": {
+    "description": "Semantic label for edit job action"
+  },
+  "uploadFile": "Upload File",
+  "@uploadFile": {
+    "description": "Semantic label for upload file action"
+  },
+  "selectLanguage": "Select Language",
+  "@selectLanguage": {
+    "description": "Semantic label for language selection"
+  },
+  "toggleTheme": "Toggle Theme",
+  "@toggleTheme": {
+    "description": "Semantic label for theme toggle"
+  },
+  "menu": "Menu",
+  "@menu": {
+    "description": "Semantic label for menu button"
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Semantic label for close button"
+  },
+  "notifications": "Notifications",
+  "@notifications": {
+    "description": "Semantic label for notifications"
+  },
+  "unreadNotifications": "Unread Notifications",
+  "@unreadNotifications": {
+    "description": "Semantic label for unread notifications"
+  }
+}
