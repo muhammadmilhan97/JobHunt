@@ -515,7 +515,8 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
         title: Text('Reject ${user['name']}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -523,7 +524,7 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
           children: [
             Text(
               'Please provide a reason for rejecting this user:',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(dialogContext).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             TextField(
@@ -540,7 +541,7 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
           TextButton(
             onPressed: () {
               reasonController.dispose();
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
             },
             child: const Text('Cancel'),
           ),
@@ -548,17 +549,23 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
             onPressed: () async {
               final reason = reasonController.text.trim();
               if (reason.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
                   const SnackBar(
                       content: Text('Please provide a rejection reason')),
                 );
                 return;
               }
 
-              Navigator.of(context).pop();
+              // Close dialog first
+              Navigator.of(dialogContext).pop();
               reasonController.dispose();
 
-              await _rejectUser(user, reason);
+              // Wait for dialog to close before proceeding
+              await Future.delayed(const Duration(milliseconds: 100));
+
+              if (mounted) {
+                await _rejectUser(user, reason);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

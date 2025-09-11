@@ -1055,11 +1055,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           }
 
           // After successful registration, user should be signed out and redirected to pending approval
-          print('Registration successful! User will be signed out for admin approval.');
-          
+          print(
+              'Registration successful! User will be signed out for admin approval.');
+
           // Sign out the user since they need approval
           await authNotifier.signOut();
-          
+
           if (mounted) {
             // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
@@ -1081,9 +1082,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 duration: const Duration(seconds: 3),
               ),
             );
-            
+
             // Navigate to pending approval screen
-            context.go('/auth/pending-approval?message=${Uri.encodeComponent('Your account has been created and is pending admin approval. You will receive an email notification once your account is reviewed.')}');
+            context.go(
+                '/auth/pending-approval?message=${Uri.encodeComponent('Your account has been created and is pending admin approval. You will receive an email notification once your account is reviewed.')}');
           }
         }
       }

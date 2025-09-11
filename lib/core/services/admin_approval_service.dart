@@ -93,6 +93,21 @@ class AdminApprovalService {
         approverName: approverName,
       );
 
+      // Optionally send welcome email after approval (not at registration)
+      try {
+        if (EmailConfig.isConfigured && EmailConfig.enableWelcomeEmails) {
+          await EmailService.sendWelcomeEmail(
+            to: userEmail,
+            toName: userName,
+            userRole: userRole,
+          );
+        }
+      } catch (e) {
+        // Do not fail approval on email failure; just log
+        ErrorReporter.reportError(
+            'Failed to send welcome email after approval', e.toString());
+      }
+
       return Result.success(null);
     } catch (e) {
       ErrorReporter.reportError('Failed to approve user', e.toString());

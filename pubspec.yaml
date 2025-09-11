@@ -86,6 +86,7 @@ flutter:
   generate: true
   
   assets:
+    - .env
     - assets/
 
 flutter_launcher_icons:

@@ -42,7 +42,9 @@ void main() async {
       const String.fromEnvironment('SENDGRID_API_KEY', defaultValue: '')
               .isNotEmpty
           ? const String.fromEnvironment('SENDGRID_API_KEY')
-          : (dotenv.maybeGet('SENDGRID_API_KEY') ?? '');
+          : (dotenv.isInitialized
+              ? (dotenv.maybeGet('SENDGRID_API_KEY') ?? '')
+              : '');
   if (sendGridApiKey.isNotEmpty) {
     EmailService.initialize(sendGridApiKey);
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/auth_providers.dart';
+import '../../core/services/auth_service.dart';
 import '../../core/providers/notification_providers.dart';
 import '../../core/providers/role_providers.dart';
 import '../../core/providers/pin_providers.dart';
@@ -413,49 +414,54 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         // Initialize PIN state and check if PIN authentication is needed
         await ref.read(pinProvider.notifier).initialize();
 
-        // Persist intended role if set; otherwise navigate to role selection
+        // Determine effective role: prefer profile role, otherwise intended role
         final intendedRole = ref.read(intendedRoleProvider);
-        if (intendedRole != null) {
+        final profile = await AuthService.getCurrentUserProfile();
+        final profileRole = profile?.role;
+
+        // If a role already exists in profile, do NOT overwrite it (prevents admin downgrade)
+        final effectiveRole = profileRole ?? intendedRole;
+
+        if (effectiveRole == null) {
+          context.go('/role');
+          return;
+        }
+
+        // If no role stored yet, persist non-admin roles selected at login
+        if (profileRole == null && effectiveRole != 'admin') {
           try {
             await ref
                 .read(authNotifierProvider.notifier)
-                .updateUserRole(intendedRole);
+                .updateUserRole(effectiveRole);
+          } catch (_) {}
+        }
 
-            // Determine target route based on role
-            String targetRoute;
-            switch (intendedRole) {
-              case 'job_seeker':
-                targetRoute = '/seeker/home';
-                break;
-              case 'employer':
-                targetRoute = '/employer/dashboard';
-                break;
-              case 'admin':
-                targetRoute = '/admin/panel';
-                break;
-              default:
-                targetRoute = '/seeker/home';
-            }
+        // Determine target route based on effective role
+        String targetRoute;
+        switch (effectiveRole) {
+          case 'job_seeker':
+            targetRoute = '/seeker/home';
+            break;
+          case 'employer':
+            targetRoute = '/employer/dashboard';
+            break;
+          case 'admin':
+            targetRoute = '/admin/panel';
+            break;
+          default:
+            targetRoute = '/seeker/home';
+        }
 
-            // Check PIN status and navigate accordingly
-            final pinState = ref.read(pinProvider);
-            if (!pinState.isSet) {
-              // PIN not set, go to PIN setup
-              context.go(
-                  '/auth/pin-setup?next=${Uri.encodeComponent(targetRoute)}');
-            } else if (!pinState.isVerified) {
-              // PIN set but not verified, go to PIN verification
-              context.go(
-                  '/auth/pin-verification?next=${Uri.encodeComponent(targetRoute)}');
-            } else {
-              // PIN verified, go to target route
-              context.go(targetRoute);
-            }
-          } catch (_) {
-            context.go('/role');
-          }
+        // Check PIN status and navigate accordingly
+        final pinState = ref.read(pinProvider);
+        if (!pinState.isSet) {
+          context
+              .go('/auth/pin-setup?next=${Uri.encodeComponent(targetRoute)}');
+        } else if (!pinState.isVerified) {
+          context.go(
+              '/auth/pin-verification?next=${Uri.encodeComponent(targetRoute)}');
         } else {
-          context.go('/role');
+          context.go(targetRoute);
         }
       }
     }

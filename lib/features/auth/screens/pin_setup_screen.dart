@@ -19,6 +19,10 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
   final List<FocusNode> _focusNodes = List.generate(4, (index) => FocusNode());
   final List<FocusNode> _confirmFocusNodes =
       List.generate(4, (index) => FocusNode());
+  final List<TextEditingController> _pinControllers =
+      List.generate(4, (index) => TextEditingController());
+  final List<TextEditingController> _confirmControllers =
+      List.generate(4, (index) => TextEditingController());
 
   bool _isConfirmMode = false;
   String? _errorMessage;
@@ -30,6 +34,12 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
     }
     for (final node in _confirmFocusNodes) {
       node.dispose();
+    }
+    for (final c in _pinControllers) {
+      c.dispose();
+    }
+    for (final c in _confirmControllers) {
+      c.dispose();
     }
     super.dispose();
   }
@@ -56,8 +66,13 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
           ),
         ),
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24.0,
+              24.0,
+              24.0,
+              24.0 + MediaQuery.of(context).viewInsets.bottom,
+            ),
             child: Column(
               children: [
                 const SizedBox(height: 20),
@@ -99,9 +114,14 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                       width: 60,
                       height: 60,
                       child: TextFormField(
+                        key: ValueKey(
+                            '${_isConfirmMode ? 'confirm' : 'pin'}-$index'),
                         focusNode: _isConfirmMode
                             ? _confirmFocusNodes[index]
                             : _focusNodes[index],
+                        controller: _isConfirmMode
+                            ? _confirmControllers[index]
+                            : _pinControllers[index],
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         obscureText: true,
@@ -158,7 +178,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                     ),
                   ),
 
-                const Spacer(),
+                const SizedBox(height: 16),
 
                 // Action buttons
                 if (_isConfirmMode) ...[
@@ -324,6 +344,11 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
     setState(() {
       _isConfirmMode = true;
       _errorMessage = null;
+      // Clear confirm state and inputs for a fresh re-entry
+      for (var i = 0; i < 4; i++) {
+        _confirmPin[i] = '';
+        _confirmControllers[i].text = '';
+      }
     });
 
     // Focus first confirm field

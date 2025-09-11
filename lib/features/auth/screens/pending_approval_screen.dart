@@ -48,7 +48,7 @@ class PendingApprovalScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
@@ -149,7 +149,7 @@ class PendingApprovalScreen extends ConsumerWidget {
                 ),
               ),
 
-              const Spacer(),
+              const SizedBox(height: 24),
 
               // Action buttons
               Column(

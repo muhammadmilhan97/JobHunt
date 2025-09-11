@@ -48,8 +48,8 @@ class AuthService {
           final role = userData['role'] ?? 'unknown';
           final approvalStatus = userData['approvalStatus'] ?? 'pending';
 
-          // Check if user is approved
-          if (approvalStatus != 'approved') {
+          // Check if user is approved (admins bypass approval gate)
+          if (role != 'admin' && approvalStatus != 'approved') {
             await _auth.signOut(); // Sign out the user
             throw Exception(_getApprovalStatusMessage(approvalStatus));
           }
