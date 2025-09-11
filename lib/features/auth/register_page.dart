@@ -1054,24 +1054,36 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             }
           }
 
-          final finalRole = currentUserProfile?.role ?? intendedRole;
-          print('Final role for navigation: $finalRole');
-          switch (finalRole) {
-            case 'job_seeker':
-              print('Navigating to job seeker home');
-              context.go('/seeker/home');
-              break;
-            case 'employer':
-              print('Navigating to employer dashboard');
-              context.go('/employer/dashboard');
-              break;
-            case 'admin':
-              print('Navigating to admin panel');
-              context.go('/admin/panel');
-              break;
-            default:
-              print('Navigating to role selection');
-              context.go('/role');
+          // After successful registration, user should be signed out and redirected to pending approval
+          print('Registration successful! User will be signed out for admin approval.');
+          
+          // Sign out the user since they need approval
+          await authNotifier.signOut();
+          
+          if (mounted) {
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text('Account created! Pending admin approval.'),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green.shade600,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+            
+            // Navigate to pending approval screen
+            context.go('/auth/pending-approval?message=${Uri.encodeComponent('Your account has been created and is pending admin approval. You will receive an email notification once your account is reviewed.')}');
           }
         }
       }

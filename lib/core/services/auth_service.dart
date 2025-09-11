@@ -102,17 +102,17 @@ class AuthService {
           'jobPostingNotifications': role == 'employer',
         });
 
-        // Send welcome email if email service is configured
-        if (EmailConfig.isConfigured && EmailConfig.enableWelcomeEmails) {
+        // Send admin notification email about new registration
+        if (EmailConfig.isConfigured) {
           try {
-            await EmailService.sendWelcomeEmail(
-              to: email,
-              toName: name,
+            await _sendAdminNotificationEmail(
+              userEmail: email,
+              userName: name,
               userRole: role,
             );
           } catch (e) {
             // Don't fail registration if email fails, just log it
-            print('Failed to send welcome email: $e');
+            print('Failed to send admin notification email: $e');
           }
         }
 
@@ -261,6 +261,85 @@ class AuthService {
         return 'Your account has been rejected. Please contact support for more information.';
       default:
         return 'Your account is not approved. Please contact support.';
+    }
+  }
+
+  /// Send admin notification email about new user registration
+  static Future<void> _sendAdminNotificationEmail({
+    required String userEmail,
+    required String userName,
+    required String userRole,
+  }) async {
+    try {
+      final roleDisplayName = _getRoleDisplayName(userRole);
+
+      await EmailService.sendEmail(
+        to: EmailConfig
+            .supportEmail, // Send to your configured support/admin inbox
+        toName: 'JobHunt Admin',
+        subject: 'New User Registration - Approval Required',
+        htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New User Registration</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563EB;">New User Registration</h2>
+        
+        <p>A new user has registered and is awaiting approval:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <strong>User Details:</strong><br>
+            <strong>Name:</strong> $userName<br>
+            <strong>Email:</strong> $userEmail<br>
+            <strong>Role:</strong> $roleDisplayName<br>
+            <strong>Status:</strong> Pending Approval
+        </div>
+        
+        <p>Please review and approve this registration in the admin panel.</p>
+        
+        <p>Best regards,<br>JobHunt System</p>
+    </div>
+</body>
+</html>
+        ''',
+        textContent: '''
+New User Registration - Approval Required
+
+A new user has registered and is awaiting approval:
+
+Name: $userName
+Email: $userEmail
+Role: $roleDisplayName
+Status: Pending Approval
+
+Please review and approve this registration in the admin panel.
+
+Best regards,
+JobHunt System
+        ''',
+      );
+
+      print('✅ Admin notification email sent for new user: $userName');
+    } catch (e) {
+      print('❌ Failed to send admin notification email: $e');
+    }
+  }
+
+  /// Get role display name for emails
+  static String _getRoleDisplayName(String role) {
+    switch (role) {
+      case 'job_seeker':
+        return 'Job Seeker';
+      case 'employer':
+        return 'Employer';
+      case 'admin':
+        return 'Administrator';
+      default:
+        return 'User';
     }
   }
 }
