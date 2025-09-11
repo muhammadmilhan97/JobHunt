@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../models/email_template.dart';
 import 'error_reporter.dart';
+import '../config/email_config.dart';
 
 class EmailService {
   static const String _baseUrl = 'https://api.sendgrid.com/v3';
@@ -58,8 +59,8 @@ class EmailService {
             }
           ],
           'from': {
-            'email': fromEmail ?? 'noreply@jobhunt.app',
-            'name': fromName ?? 'JobHunt Team',
+            'email': fromEmail ?? EmailConfig.defaultFromEmail,
+            'name': fromName ?? EmailConfig.defaultFromName,
           },
           'subject': subject,
           'content': [
@@ -84,7 +85,7 @@ class EmailService {
       } else {
         ErrorReporter.reportError(
           'SendGrid API error: ${response.statusCode}',
-          'Failed to send email via SendGrid API',
+          'Failed to send email via SendGrid API. Body: ${response.body}',
         );
         return false;
       }
@@ -136,8 +137,8 @@ class EmailService {
         body: jsonEncode({
           'personalizations': personalizations,
           'from': {
-            'email': fromEmail ?? 'noreply@jobhunt.app',
-            'name': fromName ?? 'JobHunt Team',
+            'email': fromEmail ?? EmailConfig.defaultFromEmail,
+            'name': fromName ?? EmailConfig.defaultFromName,
           },
           'subject': subject,
           'content': [
@@ -163,7 +164,7 @@ class EmailService {
       } else {
         ErrorReporter.reportError(
           'SendGrid bulk email API error: ${response.statusCode}',
-          'Failed to send bulk emails via SendGrid API',
+          'Failed to send bulk emails via SendGrid API. Body: ${response.body}',
         );
         return false;
       }

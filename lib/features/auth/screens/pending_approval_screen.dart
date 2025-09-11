@@ -17,35 +17,11 @@ class PendingApprovalScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Account Under Review'),
+      appBar: const BrandedAppBar(
+        title: 'Account Under Review',
         centerTitle: true,
         elevation: 0,
-        automaticallyImplyLeading: false,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'logout') {
-                await ref.read(authNotifierProvider.notifier).signOut();
-                if (context.mounted) {
-                  context.go('/auth');
-                }
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout),
-                    SizedBox(width: 8),
-                    Text('Sign Out'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+        showLogo: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -63,7 +39,14 @@ class PendingApprovalScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.orange.withOpacity(0.12),
+                      Colors.deepOrange.withOpacity(0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: Colors.orange.withOpacity(0.3),
