@@ -1,3 +1,15 @@
+# Local dev scripts and secrets (do not commit)
+scripts/run_with_sendgrid.ps1
+scripts/*.ps1
+.env
+
+# Flutter/IDE
+.dart_tool/
+.flutter-plugins-dependencies
+build/
+.idea/
+.vscode/
+
 # Miscellaneous
 *.class
 *.log

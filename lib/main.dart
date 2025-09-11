@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'firebase_options.dart';
@@ -21,6 +22,11 @@ void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load environment variables (.env) - non-fatal if missing
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {}
+
   // Initialize Firebase with platform-specific options
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -32,10 +38,11 @@ void main() async {
   ErrorReporter.initialize();
 
   // Initialize email service with SendGrid API key
-  const sendGridApiKey = String.fromEnvironment(
-    'SENDGRID_API_KEY',
-    defaultValue: '',
-  );
+  final sendGridApiKey =
+      const String.fromEnvironment('SENDGRID_API_KEY', defaultValue: '')
+              .isNotEmpty
+          ? const String.fromEnvironment('SENDGRID_API_KEY')
+          : (dotenv.maybeGet('SENDGRID_API_KEY') ?? '');
   if (sendGridApiKey.isNotEmpty) {
     EmailService.initialize(sendGridApiKey);
   }
