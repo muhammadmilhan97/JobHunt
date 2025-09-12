@@ -458,9 +458,9 @@ lib/
 - Android Studio / VS Code
 
 ### Setup Instructions
-1. **Clone Repository**: `git clone [repository-url]`
+1. **Clone Repository**: `git clone https://github.com/muhammadmilhan97/JobHunt`
 2. **Install Dependencies**: `flutter pub get`
-3. **Firebase Setup**: `firebase login && firebase use [project-id]`
+3. **Firebase Setup**: `firebase login && firebase use jobhunt-dev-7b0ae`
 4. **Environment Variables**: Configure `.env` file with API keys
 5. **Run Application**: `flutter run`
 
