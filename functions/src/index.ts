@@ -73,6 +73,65 @@ export const setUserRole = functions.https.onCall(async (data, context) => {
 });
 
 /**
+ * 6. On User Approval (Firestore Trigger)
+ * Sends approval/rejection emails using Gmail SMTP if configured
+ */
+export const onUserApprovalUpdate = functions.firestore
+  .document("users/{userId}")
+  .onUpdate(async (change, context) => {
+    const before = change.before.data();
+    const after = change.after.data();
+
+    if (!before || !after) return;
+
+    const beforeStatus = before.approvalStatus;
+    const afterStatus = after.approvalStatus;
+
+    if (beforeStatus === afterStatus) return;
+
+    const userEmail = after.email as string | undefined;
+    const userName = (after.name as string) || "User";
+    const userRole = (after.role as string) || "user";
+
+    if (!userEmail) return;
+
+    const mailer = MailerService.getInstance();
+
+    try {
+      if (afterStatus === "approved") {
+        const roleDisplay = userRole === "employer" ? "Employer" : userRole === "job_seeker" ? "Job Seeker" : "Administrator";
+        const subject = "Account Approved - Welcome to JobHunt!";
+        const html = `
+<!DOCTYPE html>
+<html><body style="font-family:Arial,sans-serif">
+  <h2>🎉 Account Approved!</h2>
+  <p>Hello ${userName},</p>
+  <p>Your account as a <strong>${roleDisplay}</strong> has been approved. You can now sign in and start using JobHunt.</p>
+  <p>Best regards,<br/>JobHunt Team</p>
+</body></html>`;
+        const text = `Hello ${userName},\n\nYour account has been approved. Welcome to JobHunt!`;
+        await mailer.sendBasicEmail(userEmail, userName, subject, html, text);
+      } else if (afterStatus === "rejected") {
+        const subject = "Account Review Update";
+        const reason = (after.rejectionReason as string) || "Not specified";
+        const html = `
+<!DOCTYPE html>
+<html><body style="font-family:Arial,sans-serif">
+  <h2>Account Review Update</h2>
+  <p>Hello ${userName},</p>
+  <p>We are unable to approve your account at this time.</p>
+  <p><strong>Reason:</strong> ${reason}</p>
+  <p>Best regards,<br/>JobHunt Team</p>
+</body></html>`;
+        const text = `Hello ${userName},\n\nWe are unable to approve your account at this time. Reason: ${reason}`;
+        await mailer.sendBasicEmail(userEmail, userName, subject, html, text);
+      }
+    } catch (error) {
+      functions.logger.error("Failed to send approval/rejection email", { error, userId: context.params.userId });
+    }
+  });
+
+/**
  * 2. Sign Cloudinary Upload (HTTPS Function)
  * Auth required; creates signed upload parameters
  */
@@ -161,6 +220,59 @@ export const signCloudinaryUpload = functions.https.onRequest(async (req, res) =
   } catch (error) {
     functions.logger.error("Failed to generate Cloudinary signature", { error });
     res.status(500).json({ error: "Failed to generate upload signature" });
+  }
+});
+
+/**
+ * 7. Send Email (HTTPS Function)
+ * Auth required; sends arbitrary email via Gmail SMTP/SendGrid fallback
+ */
+export const sendEmail = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+
+  if (req.method === "OPTIONS") {
+    res.status(200).send();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  // Require Firebase Auth
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const idToken = authHeader.split("Bearer ")[1];
+    await admin.auth().verifyIdToken(idToken);
+  } catch (error) {
+    functions.logger.error("Invalid ID token", { error });
+    res.status(401).json({ error: "Invalid authentication token" });
+    return;
+  }
+
+  const { to, toName, subject, htmlContent, textContent } = req.body || {};
+
+  if (!to || !toName || !subject || !htmlContent) {
+    res.status(400).json({ error: "Missing required fields: to, toName, subject, htmlContent" });
+    return;
+  }
+
+  try {
+    const mailer = MailerService.getInstance();
+    await mailer.sendBasicEmail(to, toName, subject, htmlContent, textContent);
+    res.json({ success: true });
+  } catch (error) {
+    functions.logger.error("Failed to send email via HTTPS endpoint", { error });
+    res.status(500).json({ error: "Failed to send email" });
   }
 });
 

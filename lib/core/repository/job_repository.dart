@@ -231,6 +231,7 @@ class JobRepository {
   /// Get jobs by employer ID with Result wrapper
   Stream<Result<List<Job>>> streamJobsByEmployerId(String employerId) {
     try {
+      print('Repository - Querying jobs for employerId: $employerId');
       return _jobsCollection
           .where('employerId', isEqualTo: employerId)
           .orderBy('createdAt', descending: true)
@@ -239,6 +240,11 @@ class JobRepository {
         try {
           final jobs =
               snapshot.docs.map((doc) => Job.fromFirestore(doc)).toList();
+          print(
+              'Repository - Found ${jobs.length} jobs for employerId: $employerId');
+          for (var job in jobs) {
+            print('Repository - Job: ${job.title} (ID: ${job.id})');
+          }
           return Result.success(jobs);
         } catch (e) {
           ErrorReporter.reportException(

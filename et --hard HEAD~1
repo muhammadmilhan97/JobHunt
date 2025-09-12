@@ -1,0 +1,128 @@
+[33mcommit 7d79600b64d50cfc66837dfcebc6347ce3745ccb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: muhammadmilhan97 <muhammadmilhan32@gmail.com>
+Date:   Fri Sep 12 11:48:52 2025 +0500
+
+    gmail smtp service added and functional
+
+M	lib/features/auth/screens/pin_verification_screen.dart
+
+[33mcommit afaa40e0147695a4455a2eb9e9e8f5a38a9336d9[m
+Author: muhammadmilhan97 <muhammadmilhan32@gmail.com>
+Date:   Fri Sep 12 00:48:46 2025 +0500
+
+    changes in email service and pending approval screen
+
+M	lib/features/auth/screens/pending_approval_screen.dart
+
+[33mcommit d9f4b5d20c9bfac822862b1be7bbd2eaa3579d47[m
+Author: muhammadmilhan97 <muhammadmilhan32@gmail.com>
+Date:   Thu Sep 11 23:50:09 2025 +0500
+
+    Fixed bugs during testing admin dashboard and sendgrid
+
+M	lib/features/admin/user_approval_page.dart
+M	lib/features/auth/login_page.dart
+M	lib/features/auth/register_page.dart
+M	lib/features/auth/screens/pending_approval_screen.dart
+M	lib/features/auth/screens/pin_setup_screen.dart
+
+[33mcommit 6aed0a70d32cec745e2744097389e2f6c5819a8d[m
+Author: muhammadmilhan97 <muhammadmilhan32@gmail.com>
+Date:   Thu Sep 11 12:50:09 2025 +0500
+
+    Fixed some bugs and email notifications
+
+M	lib/features/auth/register_page.dart
+
+[33mcommit 02e4ef3193d595380c062334a966d94e7c1d78d4[m
+Author: muhammadmilhan97 <muhammadmilhan32@gmail.com>
+Date:   Thu Sep 11 03:45:07 2025 +0500
+
+    Splash screen bug fixed during testing
+
+M	lib/features/auth/screens/splash_screen.dart
+
+[33mcommit 45faee910fbcf45e070afd3c159c1a4c98d6e1ae[m
+Author: muhammadmilhan97 <muhammadmilhan32@gmail.com>
+Date:   Thu Sep 11 03:07:34 2025 +0500
+
+    Initial Dev Environment Completed move to testing
+
+M	lib/features/admin/admin_dashboard_page.dart
+A	lib/features/admin/user_approval_page.dart
+M	lib/features/auth/login_page.dart
+M	lib/features/auth/screens/forgot_password_screen.dart
+A	lib/features/auth/screens/pending_approval_screen.dart
+A	lib/features/auth/screens/pin_setup_screen.dart
+A	lib/features/auth/screens/pin_verification_screen.dart
+M	lib/features/auth/screens/splash_screen.dart
+M	lib/features/seeker/home/seeker_shell.dart
+
+[33mcommit 6f66bd0d54232c447dd11282cda72ba6333e31f8[m
+Author: muhammadmilhan97 <muhammadmilhan32@gmail.com>
+Date:   Thu Sep 11 00:59:57 2025 +0500
+
+    Admin Dashboard functionality added
+
+M	lib/features/admin/admin_dashboard_page.dart
+A	lib/features/admin/widgets/create_admin_dialog.dart
+
+[33mcommit 75ba4328277040cc8871bd17c09ad6c9351b226c[m
+Author: muhammadmilhan97 <muhammadmilhan32@gmail.com>
+Date:   Wed Sep 10 23:55:47 2025 +0500
+
+    Forget password functionality added
+
+M	lib/features/auth/login_page.dart
+A	lib/features/auth/screens/forgot_password_screen.dart
+
+[33mcommit 0892a947d0bdccd8a6ffa0c1e8a78292f765054c[m
+Author: muhammadmilhan97 <muhammadmilhan32@gmail.com>
+Date:   Wed Sep 10 12:00:41 2025 +0500
+
+    Initial commit: JobHunt v2 Flutter application
+    
+    - Complete Flutter job search application with email notifications
+    - SendGrid integration for email services
+    - Firebase backend with Firestore, Auth, and Cloud Messaging
+    - Multi-language support (English/Urdu)
+    - Job seeker and employer features
+    - Real-time notifications and job alerts
+    - Comprehensive email templates and OTP verification
+    - Accessibility support and offline functionality
+    - Security: API keys moved to environment variables
+    - Ready for production deployment
+
+A	lib/features/admin/admin_dashboard_page.dart
+A	lib/features/admin/job_moderation_page.dart
+A	lib/features/admin/screens/admin_panel_screen.dart
+A	lib/features/admin/user_management_page.dart
+A	lib/features/auth/login_page.dart
+A	lib/features/auth/register_page.dart
+A	lib/features/auth/role_select_page.dart
+A	lib/features/auth/screens/login_screen.dart
+A	lib/features/auth/screens/otp_verification_screen.dart
+A	lib/features/auth/screens/role_select_screen.dart
+A	lib/features/auth/screens/splash_screen.dart
+A	lib/features/employer/applicants/applicants_list_page.dart
+A	lib/features/employer/applicants/employer_applicants_page.dart
+A	lib/features/employer/company/employer_company_page.dart
+A	lib/features/employer/dashboard/employer_dashboard_page.dart
+A	lib/features/employer/dashboard/employer_my_jobs_page.dart
+A	lib/features/employer/post_job/post_job_page.dart
+A	lib/features/employer/screens/employer_dashboard_screen.dart
+A	lib/features/employer/screens/post_job_screen.dart
+A	lib/features/notifications/.gitkeep
+A	lib/features/notifications/notifications_page.dart
+A	lib/features/seeker/applications/application_detail_page.dart
+A	lib/features/seeker/applications/my_applications_page.dart
+A	lib/features/seeker/favorites/seeker_favorites_page.dart
+A	lib/features/seeker/home/seeker_home_page.dart
+A	lib/features/seeker/home/seeker_shell.dart
+A	lib/features/seeker/job_detail/apply_bottom_sheet.dart
+A	lib/features/seeker/job_detail/job_detail_page.dart
+A	lib/features/seeker/profile/seeker_profile_page.dart
+A	lib/features/seeker/screens/job_detail_screen.dart
+A	lib/features/seeker/screens/seeker_home_screen.dart
+A	lib/features/shared/settings/email_preferences_page.dart
+A	lib/features/shared/settings/settings_page.dart

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/models/models.dart';
 import '../../../widgets/tag_input.dart';
+import '../../../core/widgets/app_logo.dart';
+import '../../../core/services/auth_service.dart';
 
 // Post Job Form State
 class PostJobFormState {
@@ -201,7 +203,7 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
     final repo = ref.read(jobRepositoryProvider);
     final form = ref.read(postJobFormProvider.notifier);
     final result = await repo.getJobById(id);
-    
+
     result.when(
       success: (job) {
         if (job != null) {
@@ -232,12 +234,12 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
   @override
   Widget build(BuildContext context) {
     final formState = ref.watch(postJobFormProvider);
-    final jobRepository = ref.read(jobRepositoryProvider);
+    // final jobRepository = ref.read(jobRepositoryProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.jobId == null ? 'Post a Job' : 'Edit Job'),
-        backgroundColor: Colors.transparent,
+      appBar: BrandedAppBar(
+        title: widget.jobId == null ? 'Post a Job' : 'Edit Job',
+        centerTitle: true,
         elevation: 0,
         actions: [
           TextButton(
@@ -290,7 +292,8 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: formState.isSubmitting ? null : () => _submitJob(),
+                    onPressed:
+                        formState.isSubmitting ? null : () => _submitJob(),
                     style: ElevatedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -302,7 +305,8 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(
@@ -359,6 +363,7 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
               decoration: const InputDecoration(
                 labelText: 'Category *',
               ),
+              isExpanded: true,
               items: _categories
                   .map((category) => DropdownMenuItem(
                         value: category,
@@ -381,6 +386,7 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
               decoration: const InputDecoration(
                 labelText: 'Job Type *',
               ),
+              isExpanded: true,
               items: _jobTypes
                   .map((type) => DropdownMenuItem(
                         value: type,
@@ -524,6 +530,7 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
                     decoration: const InputDecoration(
                       labelText: 'Country *',
                     ),
+                    isExpanded: true,
                     items: _countries
                         .map((country) => DropdownMenuItem(
                               value: country,
@@ -722,11 +729,15 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
     formController.setSubmitting(true);
 
     try {
-      final employerId = 'current_employer_id'; // TODO: pull from auth
+      final employerId = AuthService.currentUserId;
+      if (employerId == null) {
+        throw Exception('User not authenticated');
+      }
+
       final job = Job(
         id: widget.jobId ?? 'job_${DateTime.now().millisecondsSinceEpoch}',
         title: formState.title,
-        company: 'Your Company',
+        company: 'EXXSN LTD', // TODO: Get from user profile
         category: formState.category,
         locationCity: formState.city,
         locationCountry: formState.country,
@@ -743,12 +754,15 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
       );
 
       if (widget.jobId == null) {
+        print('Creating job with employerId: $employerId');
+        print('Job data: ${job.toFirestore()}');
         final result = await jobRepository.createJob(job);
         result.when(
           success: (jobId) {
-            // Job created successfully
+            print('Job created successfully with ID: $jobId');
           },
           failure: (message, error) {
+            print('Job creation failed: $message');
             throw Exception(message);
           },
           loading: () {
@@ -756,7 +770,8 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
           },
         );
       } else {
-        final result = await jobRepository.updateJob(widget.jobId!, job.toFirestore());
+        final result =
+            await jobRepository.updateJob(widget.jobId!, job.toFirestore());
         result.when(
           success: (_) {
             // Job updated successfully

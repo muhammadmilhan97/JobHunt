@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../widgets/job_card.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/widgets/app_logo.dart';
 
 class EmployerMyJobsPage extends ConsumerWidget {
   const EmployerMyJobsPage({super.key});
@@ -13,7 +14,7 @@ class EmployerMyJobsPage extends ConsumerWidget {
     final uid = FirebaseAuth.instance.currentUser!.uid;
     final jobsAsync = ref.watch(jobsByEmployerProvider(uid));
     return Scaffold(
-      appBar: AppBar(title: const Text('My Jobs')),
+      appBar: const BrandedAppBar(title: 'My Jobs'),
       body: jobsAsync.when(
         data: (jobs) {
           if (jobs.isEmpty) {

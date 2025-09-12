@@ -12,9 +12,12 @@ class EmployerDashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final jobsAsync = ref.watch(latestJobsProvider);
     final currentUser = ref.watch(currentUserProvider);
     final uid = FirebaseAuth.instance.currentUser?.uid;
+    print('Dashboard - Current user ID: $uid');
+    final jobsAsync = uid != null
+        ? ref.watch(jobsByEmployerProvider(uid))
+        : const AsyncValue<List<Job>>.data(const []);
     final userProfileAsync = uid != null
         ? ref.watch(userStreamProvider(uid))
         : const AsyncValue.data(null);
@@ -58,7 +61,9 @@ class EmployerDashboardPage extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(latestJobsProvider);
+          if (uid != null) {
+            ref.invalidate(jobsByEmployerProvider(uid));
+          }
           await Future.delayed(const Duration(milliseconds: 500));
         },
         child: SingleChildScrollView(
@@ -120,10 +125,18 @@ class EmployerDashboardPage extends ConsumerWidget {
               const SizedBox(height: 16),
 
               jobsAsync.when(
-                data: (jobs) => _buildJobsList(context, jobs),
+                data: (jobs) {
+                  print('Dashboard - Jobs loaded: ${jobs.length} jobs');
+                  for (var job in jobs) {
+                    print('Job: ${job.title} - EmployerId: ${job.employerId}');
+                  }
+                  return _buildJobsList(context, jobs);
+                },
                 loading: () => _buildJobsShimmer(),
-                error: (error, stack) =>
-                    _buildErrorState(context, error.toString()),
+                error: (error, stack) {
+                  print('Dashboard - Error loading jobs: $error');
+                  return _buildErrorState(context, error.toString());
+                },
               ),
             ],
           ),
@@ -220,19 +233,10 @@ class EmployerDashboardPage extends ConsumerWidget {
   }
 
   Widget _buildMetricsSection(BuildContext context, List<Job> jobs) {
-    // Calculate metrics from jobs
+    // Calculate metrics from this employer's jobs
     final totalJobs = jobs.length;
-    final totalApplicants = jobs.fold<int>(
-      0,
-      (sum, job) => sum + (job.id.hashCode % 50), // Fake applicant count
-    );
-    final activeJobs = jobs
-        .where((job) => DateTime.now().difference(job.createdAt).inDays < 30)
-        .length;
-    final recentApplications = jobs.fold<int>(
-      0,
-      (sum, job) => sum + (job.id.hashCode % 10), // Fake recent applications
-    );
+    // Applicants will be counted on applicants page; dashboard shows total jobs only for now
+    final totalApplicants = 0;
 
     return Row(
       children: [
