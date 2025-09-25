@@ -61,7 +61,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         return;
       }
 
-      // Initialize PIN state
+      // Initialize PIN state (session-aware)
       await ref.read(pinProvider.notifier).initialize();
       final pinState = ref.read(pinProvider);
 

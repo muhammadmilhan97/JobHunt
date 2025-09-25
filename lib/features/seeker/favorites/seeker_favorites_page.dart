@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/favorites_providers.dart';
 import '../../../widgets/job_card.dart';
+import '../../../core/widgets/app_logo.dart';
 
 class SeekerFavoritesPage extends ConsumerWidget {
   const SeekerFavoritesPage({super.key});
@@ -9,7 +10,7 @@ class SeekerFavoritesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final favs = ref.watch(favoritesJobsProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Favorites')),
+      appBar: const BrandedAppBar(title: 'Favorites'),
       body: favs.when(
         data: (jobs) {
           if (jobs.isEmpty) {

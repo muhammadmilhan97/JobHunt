@@ -411,7 +411,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ref.read(notificationNotifierProvider.notifier);
         notificationNotifier.requestPermission();
 
-        // Initialize PIN state and check if PIN authentication is needed
+        // Initialize PIN state and check if PIN authentication is needed (session-aware)
         await ref.read(pinProvider.notifier).initialize();
 
         // Determine effective role: prefer profile role, otherwise intended role

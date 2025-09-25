@@ -49,14 +49,13 @@ class _PinVerificationScreenState extends ConsumerState<PinVerificationScreen> {
         _showExitConfirmation(context);
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Enter PIN'),
-          centerTitle: true,
-          elevation: 0,
+        appBar: BrandedAppBar(
+          title: 'Enter PIN',
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => _showExitConfirmation(context),
           ),
+          elevation: 0,
           actions: [
             PopupMenuButton<String>(
               onSelected: (value) async {
@@ -83,246 +82,266 @@ class _PinVerificationScreenState extends ConsumerState<PinVerificationScreen> {
           ],
         ),
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-
-                // Logo
-                const Center(child: AppLogo.large()),
-
-                const SizedBox(height: 40),
-
-                // Welcome message
-                Text(
-                  'Welcome Back!',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.primaryColor,
-                  ),
-                  textAlign: TextAlign.center,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  24.0,
+                  24.0,
+                  24.0,
+                  24.0 + MediaQuery.of(context).viewInsets.bottom,
                 ),
-
-                const SizedBox(height: 16),
-
-                Text(
-                  'Enter your 4-digit PIN to access your account',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.textTheme.bodyMedium?.color,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight -
+                        MediaQuery.of(context).viewInsets.bottom,
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
 
-                const SizedBox(height: 40),
+                      // Logo
+                      const Center(child: AppLogo.large()),
 
-                // PIN input fields
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(4, (index) {
-                    return SizedBox(
-                      width: 60,
-                      height: 60,
-                      child: TextFormField(
-                        focusNode: _focusNodes[index],
-                        textAlign: TextAlign.center,
-                        keyboardType: TextInputType.number,
-                        obscureText: !_showPin,
-                        maxLength: 1,
+                      const SizedBox(height: 40),
+
+                      // Welcome message
+                      Text(
+                        'Welcome Back!',
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: theme.primaryColor,
                         ),
-                        decoration: InputDecoration(
-                          counterText: '',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: pinState.error != null
-                                  ? Colors.red
-                                  : theme.primaryColor,
-                              width: 2,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: pinState.error != null
-                                  ? Colors.red
-                                  : theme.primaryColor,
-                              width: 2,
-                            ),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Colors.red, width: 2),
-                          ),
-                        ),
-                        onChanged: (value) => _onPinChanged(index, value),
+                        textAlign: TextAlign.center,
                       ),
-                    );
-                  }),
-                ),
 
-                const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
-                // Show/Hide PIN toggle
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Checkbox(
-                      value: _showPin,
-                      onChanged: (value) {
-                        setState(() {
-                          _showPin = value ?? false;
-                        });
-                      },
-                    ),
-                    Text(
-                      'Show PIN',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Error message and attempts
-                if (pinState.error != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.error,
-                                color: Colors.red.shade600, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                pinState.error!,
-                                style: TextStyle(color: Colors.red.shade600),
-                              ),
-                            ),
-                          ],
+                      Text(
+                        'Enter your 4-digit PIN to access your account',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
-                        if (pinState.remainingAttempts > 0) ...[
-                          const SizedBox(height: 8),
-                          LinearProgressIndicator(
-                            value: pinState.remainingAttempts / 5,
-                            backgroundColor: Colors.red.withOpacity(0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              pinState.remainingAttempts > 2
-                                  ? Colors.green
-                                  : pinState.remainingAttempts > 1
-                                      ? Colors.orange
-                                      : Colors.red,
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // PIN input fields
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: List.generate(4, (index) {
+                          return SizedBox(
+                            width: 60,
+                            height: 60,
+                            child: TextFormField(
+                              focusNode: _focusNodes[index],
+                              textAlign: TextAlign.center,
+                              keyboardType: TextInputType.number,
+                              obscureText: !_showPin,
+                              maxLength: 1,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              decoration: InputDecoration(
+                                counterText: '',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: pinState.error != null
+                                        ? Colors.red
+                                        : theme.primaryColor,
+                                    width: 2,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: pinState.error != null
+                                        ? Colors.red
+                                        : theme.primaryColor,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: Colors.red, width: 2),
+                                ),
+                              ),
+                              onChanged: (value) => _onPinChanged(index, value),
                             ),
+                          );
+                        }),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Show/Hide PIN toggle
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Checkbox(
+                            value: _showPin,
+                            onChanged: (value) {
+                              setState(() {
+                                _showPin = value ?? false;
+                              });
+                            },
+                          ),
+                          Text(
+                            'Show PIN',
+                            style: theme.textTheme.bodyMedium,
                           ),
                         ],
-                      ],
-                    ),
-                  ),
+                      ),
 
-                const Spacer(),
+                      const SizedBox(height: 20),
 
-                // Verify button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isPinComplete() &&
-                            !pinState.isLoading &&
-                            pinState.remainingAttempts > 0
-                        ? _verifyPin
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: pinState.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Verify PIN'),
+                      // Error message and attempts
+                      if (pinState.error != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border:
+                                Border.all(color: Colors.red.withOpacity(0.3)),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.error,
+                                      color: Colors.red.shade600, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      pinState.error!,
+                                      style:
+                                          TextStyle(color: Colors.red.shade600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (pinState.remainingAttempts > 0) ...[
+                                const SizedBox(height: 8),
+                                LinearProgressIndicator(
+                                  value: pinState.remainingAttempts / 5,
+                                  backgroundColor: Colors.red.withOpacity(0.2),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    pinState.remainingAttempts > 2
+                                        ? Colors.green
+                                        : pinState.remainingAttempts > 1
+                                            ? Colors.orange
+                                            : Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                      const SizedBox(height: 24),
+
+                      // Verify button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isPinComplete() &&
+                                  !pinState.isLoading &&
+                                  pinState.remainingAttempts > 0
+                              ? _verifyPin
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: pinState.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Text('Verify PIN'),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Forgot PIN option
+                      TextButton(
+                        onPressed: pinState.remainingAttempts <= 0
+                            ? null
+                            : _showForgotPinDialog,
+                        child: const Text('Forgot PIN?'),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Security info
+                      if (pinState.remainingAttempts <= 0)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border:
+                                Border.all(color: Colors.red.withOpacity(0.3)),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.lock,
+                                  color: Colors.red.shade600, size: 32),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Account Locked',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: Colors.red.shade600,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Too many failed attempts. Please sign out and sign in again to reset your PIN attempts.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.red.shade600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: theme.dividerColor),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline,
+                                  color: theme.primaryColor, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Enter your PIN to access your JobHunt account securely.',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.textTheme.bodyMedium?.color,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-
-                const SizedBox(height: 16),
-
-                // Forgot PIN option
-                TextButton(
-                  onPressed: pinState.remainingAttempts <= 0
-                      ? null
-                      : _showForgotPinDialog,
-                  child: const Text('Forgot PIN?'),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Security info
-                if (pinState.remainingAttempts <= 0)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(Icons.lock, color: Colors.red.shade600, size: 32),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Account Locked',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: Colors.red.shade600,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Too many failed attempts. Please sign out and sign in again to reset your PIN attempts.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.red.shade600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: theme.dividerColor),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline,
-                            color: theme.primaryColor, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Enter your PIN to access your JobHunt account securely.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.textTheme.bodyMedium?.color,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),

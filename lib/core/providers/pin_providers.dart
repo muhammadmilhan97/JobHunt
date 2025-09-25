@@ -44,11 +44,13 @@ class PinNotifier extends StateNotifier<PinState> {
 
     try {
       final isSet = await PinService.isPinSet();
+      final isSessionVerified = await PinService.isSessionVerified();
       final remainingAttempts = await PinService.getRemainingAttempts();
 
       state = state.copyWith(
         isLoading: false,
         isSet: isSet,
+        isVerified: isSessionVerified,
         remainingAttempts: remainingAttempts,
       );
     } catch (e) {
@@ -65,7 +67,7 @@ class PinNotifier extends StateNotifier<PinState> {
 
     try {
       final success = await PinService.setPin(pin);
-      
+
       if (success) {
         state = state.copyWith(
           isLoading: false,
@@ -107,7 +109,7 @@ class PinNotifier extends StateNotifier<PinState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: remainingAttempts > 0 
+          error: remainingAttempts > 0
               ? 'Incorrect PIN. $remainingAttempts attempts remaining.'
               : 'Too many failed attempts. Please sign out and sign in again.',
           remainingAttempts: remainingAttempts,
@@ -130,7 +132,7 @@ class PinNotifier extends StateNotifier<PinState> {
 
     try {
       final success = await PinService.changePin(oldPin, newPin);
-      
+
       if (success) {
         state = state.copyWith(
           isLoading: false,
@@ -161,7 +163,7 @@ class PinNotifier extends StateNotifier<PinState> {
 
     try {
       final success = await PinService.resetPin();
-      
+
       if (success) {
         state = state.copyWith(
           isLoading: false,
@@ -207,6 +209,6 @@ final pinProvider = StateNotifierProvider<PinNotifier, PinState>(
 final pinVerificationRequiredProvider = FutureProvider<bool>((ref) async {
   final pinState = ref.watch(pinProvider);
   if (!pinState.isSet) return false;
-  
+
   return !pinState.isVerified;
 });

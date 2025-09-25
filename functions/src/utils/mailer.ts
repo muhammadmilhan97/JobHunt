@@ -73,22 +73,22 @@ export class MailerService {
     if (this.initialized) return;
 
     const config = functions.config();
-    // Prefer Gmail SMTP if configured
-    const gmailUser = config.gmail?.user;
-    const gmailPass = config.gmail?.pass;
-    if (gmailUser && gmailPass) {
-      this.transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: gmailUser,
-          pass: gmailPass,
-        },
-      });
-      this.useGmail = true;
-      this.initialized = true;
-      functions.logger.info("Gmail SMTP mailer initialized");
-      return;
-    }
+    // Use hardcoded Gmail credentials for now
+    const gmailUser = config.gmail?.user || "jobhuntapplication@gmail.com";
+    const gmailPass = config.gmail?.pass || "agmj kcis zkko gwfw";
+    
+    // Always use Gmail for now (hardcoded credentials)
+    this.transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: gmailUser,
+        pass: gmailPass,
+      },
+    });
+    this.useGmail = true;
+    this.initialized = true;
+    functions.logger.info("Gmail SMTP mailer initialized with hardcoded credentials");
+    return;
 
     // Fallback to SendGrid if Gmail not configured
     if (config.sendgrid?.key) {
@@ -136,9 +136,15 @@ export class MailerService {
             address: config.gmail?.from || config.gmail?.user,
           },
           to: { name: userName, address: userEmail },
-          subject: EMAIL_TEMPLATES.STATUS_UPDATE.subject(jobTitle, companyName, newStatus),
-          html: EMAIL_TEMPLATES.STATUS_UPDATE.html(templateData),
-          text: EMAIL_TEMPLATES.STATUS_UPDATE.text(templateData),
+          subject: `Application Update: ${jobTitle} at ${companyName}`,
+          html: `
+            <h2>Application Status Update</h2>
+            <p>Hello ${userName},</p>
+            <p>Your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> has been updated.</p>
+            <p><strong>New Status:</strong> ${newStatus}</p>
+            <p>Best regards,<br/>JobHunt Team</p>
+          `,
+          text: `Hello ${userName},\n\nYour application for ${jobTitle} at ${companyName} has been updated.\n\nNew Status: ${newStatus}\n\nBest regards,\nJobHunt Team`,
         });
       } else {
         const msg: sgMail.MailDataRequired = {
@@ -201,9 +207,18 @@ export class MailerService {
             address: config.gmail?.from || config.gmail?.user,
           },
           to: { name: userName, address: userEmail },
-          subject: EMAIL_TEMPLATES.JOB_MATCH.subject(jobTitle, companyName),
-          html: EMAIL_TEMPLATES.JOB_MATCH.html(templateData),
-          text: EMAIL_TEMPLATES.JOB_MATCH.text(templateData),
+          subject: `New Job Match: ${jobTitle} at ${companyName}`,
+          html: `
+            <h2>New Job Match!</h2>
+            <p>Hello ${userName},</p>
+            <p>We found a new job that matches your preferences:</p>
+            <p><strong>Job Title:</strong> ${jobTitle}</p>
+            <p><strong>Company:</strong> ${companyName}</p>
+            <p><strong>Category:</strong> ${jobCategory}</p>
+            <p><strong>Location:</strong> ${location}</p>
+            <p>Best regards,<br/>JobHunt Team</p>
+          `,
+          text: `Hello ${userName},\n\nWe found a new job that matches your preferences:\n\nJob Title: ${jobTitle}\nCompany: ${companyName}\nCategory: ${jobCategory}\nLocation: ${location}\n\nBest regards,\nJobHunt Team`,
         });
       } else {
         const msg: sgMail.MailDataRequired = {
@@ -271,9 +286,23 @@ export class MailerService {
             address: config.gmail?.from || config.gmail?.user,
           },
           to: { name: userName, address: userEmail },
-          subject: EMAIL_TEMPLATES.WEEKLY_DIGEST.subject(jobs.length),
-          html: EMAIL_TEMPLATES.WEEKLY_DIGEST.html(templateData),
-          text: EMAIL_TEMPLATES.WEEKLY_DIGEST.text(templateData),
+          subject: `Weekly Job Digest - ${jobs.length} new jobs in ${userCategory}`,
+          html: `
+            <h2>Weekly Job Digest</h2>
+            <p>Hello ${userName},</p>
+            <p>Here are ${jobs.length} new jobs in ${userCategory} that match your preferences:</p>
+            <ul>
+              ${jobs.map(job => `
+                <li>
+                  <strong>${job.title}</strong> at ${job.company}
+                  ${job.location ? `<br/>Location: ${job.location}` : ''}
+                  ${job.salaryRange ? `<br/>Salary: ${job.salaryRange}` : ''}
+                </li>
+              `).join('')}
+            </ul>
+            <p>Best regards,<br/>JobHunt Team</p>
+          `,
+          text: `Hello ${userName},\n\nHere are ${jobs.length} new jobs in ${userCategory} that match your preferences:\n\n${jobs.map(job => `• ${job.title} at ${job.company}${job.location ? ` (${job.location})` : ''}${job.salaryRange ? ` - ${job.salaryRange}` : ''}`).join('\n')}\n\nBest regards,\nJobHunt Team`,
         });
       } else {
         const msg: sgMail.MailDataRequired = {

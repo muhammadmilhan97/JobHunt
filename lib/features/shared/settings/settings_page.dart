@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/localization_providers.dart';
 import '../../../core/services/localization_service.dart';
+import '../../../core/widgets/app_logo.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -13,11 +14,17 @@ class SettingsPage extends ConsumerWidget {
     final accessibilityService = ref.watch(accessibilityServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
+      appBar: BrandedAppBar(
+        title: 'Settings',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/seeker/profile');
+            }
+          },
           tooltip: 'Back',
         ),
       ),
@@ -147,7 +154,7 @@ class SettingsPage extends ConsumerWidget {
         subtitle: const Text('Manage your email notifications'),
         trailing: const Icon(Icons.arrow_forward_ios),
         onTap: () {
-          context.go('/email-preferences');
+          context.push('/email-preferences');
         },
       ),
     );

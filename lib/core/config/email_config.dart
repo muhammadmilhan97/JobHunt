@@ -37,7 +37,9 @@ class EmailConfig {
   static const bool enableWeeklyDigest = true;
 
   /// Check if email service is properly configured
-  static bool get isConfigured => sendGridApiKey.isNotEmpty;
+  /// We now use Firebase Cloud Functions (Gmail SMTP) instead of SendGrid,
+  /// so consider email configured by default.
+  static bool get isConfigured => true;
 
   /// Get the job URL for a specific job ID
   static String getJobUrl(String jobId) => '$appDomain/jobs/$jobId';

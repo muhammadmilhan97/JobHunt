@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/admin_providers.dart';
 import '../../core/providers/auth_providers.dart';
 import '../../core/widgets/app_logo.dart';
+import '../../core/services/email_test_service.dart';
+import '../../core/services/vercel_email_service.dart';
 import 'widgets/create_admin_dialog.dart';
 
 class AdminDashboardPage extends ConsumerWidget {
@@ -456,12 +458,7 @@ class AdminDashboardPage extends ConsumerWidget {
               'View system activity logs',
               Icons.description,
               Colors.orange,
-              () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('System logs feature coming soon!')),
-                );
-              },
+              () => context.push('/admin/logs'),
             ),
             _buildActionCard(
               context,
@@ -469,17 +466,24 @@ class AdminDashboardPage extends ConsumerWidget {
               'Configure system settings',
               Icons.settings,
               Colors.purple,
-              () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Admin settings feature coming soon!')),
-                );
-              },
+              () => context.push('/admin/settings'),
             ),
+            _buildTestEmailCard(context),
           ],
         ),
       ],
     );
+  }
+
+  void _closeLoadingDialog(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final nav = Navigator.of(context, rootNavigator: true);
+      if (nav.canPop()) {
+        try {
+          nav.pop();
+        } catch (_) {}
+      }
+    });
   }
 
   Widget _buildActionCard(
@@ -540,6 +544,257 @@ class AdminDashboardPage extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDisabledActionCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[50],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.grey[400],
+                  size: 24,
+                ),
+              ),
+              Column(
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[600],
+                        ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[500],
+                          fontSize: 11,
+                        ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTestEmailCard(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: () => _showTestEmailDialog(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [Colors.blue[400]!, Colors.blue[600]!],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.email_outlined,
+                color: Colors.white,
+                size: 32,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Test Email',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Test Gmail SMTP setup',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 11,
+                    ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTestEmailDialog(BuildContext context) {
+    final emailController = TextEditingController();
+    final subjectController = TextEditingController(text: 'JobHunt Email Test');
+    final messageController = TextEditingController(
+        text: 'This is a test email from JobHunt to verify Gmail SMTP setup.');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Test Email'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'To Email',
+                  hintText: 'test@example.com',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: subjectController,
+                decoration: const InputDecoration(
+                  labelText: 'Subject',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: messageController,
+                decoration: const InputDecoration(
+                  labelText: 'Message',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (emailController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Please enter an email address')),
+                );
+                return;
+              }
+
+              Navigator.of(context).pop();
+
+              // Show loading with proper context handling
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (loadingContext) => const AlertDialog(
+                  content: Row(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(width: 16),
+                      Text('Sending test email...'),
+                    ],
+                  ),
+                ),
+              );
+
+              try {
+                // Prefer Vercel endpoint if available
+                const vercelBase =
+                    'https://jobhunt-email-j9a89tm1a-muhammad-milhans-projects.vercel.app';
+                final ok = await VercelEmailService.send(
+                  endpoint: '$vercelBase/api/send-email',
+                  to: emailController.text,
+                  subject: subjectController.text,
+                  html: '<p>${messageController.text}</p>',
+                  text: messageController.text,
+                  // If your Vercel project has protection enabled,
+                  // set a token here or remove project protection.
+                  protectionBypassToken: const String.fromEnvironment(
+                      'VERCEL_BYPASS_TOKEN',
+                      defaultValue: ''),
+                );
+
+                // Check if context is still mounted before closing dialog
+                if (context.mounted) {
+                  _closeLoadingDialog(context);
+
+                  if (ok) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Test email sent successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                            'Failed to send email. Check Vercel logs and env vars.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                // Check if context is still mounted before closing dialog
+                if (context.mounted) {
+                  _closeLoadingDialog(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Send Test'),
+          ),
+        ],
       ),
     );
   }

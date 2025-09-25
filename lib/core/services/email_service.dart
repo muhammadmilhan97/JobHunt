@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../models/email_template.dart';
 import 'error_reporter.dart';
 import '../config/email_config.dart';
@@ -9,18 +10,25 @@ class EmailService {
   static const String _baseUrl = 'https://api.sendgrid.com/v3';
   static String? _apiKey;
   static bool _isInitialized = false;
+  static FirebaseFunctions? _functions;
 
-  /// Initialize the EmailService with SendGrid API key
-  static void initialize(String apiKey) {
+  /// Initialize the EmailService
+  /// SendGrid path kept for backward compatibility; not required for SMTP via CF.
+  static void initialize([String? apiKey]) {
     _apiKey = apiKey;
     _isInitialized = true;
+    try {
+      _functions = FirebaseFunctions.instance;
+    } catch (_) {
+      _functions = null;
+    }
     if (kDebugMode) {
-      print('EmailService initialized successfully');
+      print('EmailService initialized (Cloud Functions + optional SendGrid)');
     }
   }
 
   /// Check if the service is properly initialized
-  static bool get isInitialized => _isInitialized && _apiKey != null;
+  static bool get isInitialized => _isInitialized;
 
   /// Send a single email
   static Future<bool> sendEmail({
@@ -40,59 +48,73 @@ class EmailService {
       return false;
     }
 
+    // Prefer Cloud Functions callable for SMTP via Gmail
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/mail/send'),
-        headers: {
-          'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'personalizations': [
-            {
-              'to': [
+      final callable = (_functions ?? FirebaseFunctions.instance)
+          .httpsCallable('sendEmailViaHttps');
+      final result = await callable.call({
+        'to': to,
+        'toName': toName,
+        'subject': subject,
+        'htmlContent': htmlContent,
+        'textContent': textContent,
+        'fromEmail': fromEmail ?? EmailConfig.defaultFromEmail,
+        'fromName': fromName ?? EmailConfig.defaultFromName,
+      });
+      if (kDebugMode) {
+        print('Email sent via Cloud Function to $to: ${result.data}');
+      }
+      return true;
+    } catch (e) {
+      // Fallback to SendGrid (legacy) if configured
+      if (_apiKey?.isNotEmpty == true) {
+        try {
+          final response = await http.post(
+            Uri.parse('$_baseUrl/mail/send'),
+            headers: {
+              'Authorization': 'Bearer $_apiKey',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'personalizations': [
                 {
-                  'email': to,
-                  'name': toName,
+                  'to': [
+                    {
+                      'email': to,
+                      'name': toName,
+                    }
+                  ],
                 }
               ],
-            }
-          ],
-          'from': {
-            'email': fromEmail ?? EmailConfig.defaultFromEmail,
-            'name': fromName ?? EmailConfig.defaultFromName,
-          },
-          'subject': subject,
-          'content': [
-            if (textContent != null)
-              {
-                'type': 'text/plain',
-                'value': textContent,
+              'from': {
+                'email': fromEmail ?? EmailConfig.defaultFromEmail,
+                'name': fromName ?? EmailConfig.defaultFromName,
               },
-            {
-              'type': 'text/html',
-              'value': htmlContent,
-            },
-          ],
-        }),
-      );
-
-      if (response.statusCode == 202) {
-        if (kDebugMode) {
-          print('Email sent successfully to $to');
-        }
-        return true;
-      } else {
-        ErrorReporter.reportError(
-          'SendGrid API error: ${response.statusCode}',
-          'Failed to send email via SendGrid API. Body: ${response.body}',
-        );
-        return false;
+              'subject': subject,
+              'content': [
+                if (textContent != null)
+                  {
+                    'type': 'text/plain',
+                    'value': textContent,
+                  },
+                {
+                  'type': 'text/html',
+                  'value': htmlContent,
+                },
+              ],
+            }),
+          );
+          if (response.statusCode == 202) {
+            if (kDebugMode) {
+              print('Email sent successfully to $to via SendGrid fallback');
+            }
+            return true;
+          }
+        } catch (_) {}
       }
-    } catch (e, stackTrace) {
       ErrorReporter.reportError(
-        'Failed to send email',
-        'Exception occurred while sending email: ${e.toString()}',
+        'Email send failed',
+        'Both Cloud Function and SendGrid fallback failed: ${e.toString()}',
       );
       return false;
     }
@@ -168,7 +190,7 @@ class EmailService {
         );
         return false;
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       ErrorReporter.reportError(
         'Failed to send bulk emails',
         'Exception occurred while sending bulk emails: ${e.toString()}',

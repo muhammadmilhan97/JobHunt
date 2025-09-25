@@ -40,12 +40,8 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Approval'),
-        centerTitle: true,
-        backgroundColor: Colors.purple[600],
-        foregroundColor: Colors.white,
-        elevation: 1,
+      appBar: BrandedAppBar(
+        title: 'User Approval',
         actions: [
           IconButton(
             onPressed: () {
@@ -61,9 +57,9 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
+          indicatorColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          labelColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
           onTap: (index) {
             if (index == 1 && approvalState.allUsers.isEmpty) {
               ref.read(adminApprovalProvider.notifier).loadAllUsers();

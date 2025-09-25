@@ -10,6 +10,8 @@ import '../features/seeker/job_detail/job_detail_page.dart';
 import '../features/employer/dashboard/employer_dashboard_page.dart';
 import '../features/employer/post_job/post_job_page.dart';
 import '../features/admin/screens/admin_panel_screen.dart';
+import '../features/admin/screens/system_logs_page.dart';
+import '../features/admin/screens/admin_settings_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -80,6 +82,16 @@ final GoRouter appRouter = GoRouter(
       path: '/admin/panel',
       name: 'admin-panel',
       builder: (context, state) => const AdminPanelScreen(),
+    ),
+    GoRoute(
+      path: '/admin/logs',
+      name: 'admin-logs',
+      builder: (context, state) => const SystemLogsPage(),
+    ),
+    GoRoute(
+      path: '/admin/settings',
+      name: 'admin-settings',
+      builder: (context, state) => const AdminSettingsPage(),
     ),
   ],
 

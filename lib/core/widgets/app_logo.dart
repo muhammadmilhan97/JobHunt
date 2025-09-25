@@ -112,6 +112,7 @@ class BrandedAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double elevation;
   final Widget? leading;
   final bool showLogo;
+  final PreferredSizeWidget? bottom;
 
   const BrandedAppBar({
     super.key,
@@ -123,6 +124,7 @@ class BrandedAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.elevation = 0,
     this.leading,
     this.showLogo = true,
+    this.bottom,
   });
 
   @override
@@ -161,11 +163,13 @@ class BrandedAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: elevation,
       actions: actions,
       leading: leading,
+      bottom: bottom,
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
 }
 
 /// A splash screen widget with the app logo and loading animation

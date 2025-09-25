@@ -43,6 +43,7 @@ dependencies:
   firebase_storage: ^12.3.2
   firebase_analytics: ^11.6.0
   firebase_messaging: ^15.1.3
+  cloud_functions: ^5.0.5
   
   # Cloudinary
   cloudinary: ^1.1.0

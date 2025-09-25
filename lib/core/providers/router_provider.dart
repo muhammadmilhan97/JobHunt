@@ -21,6 +21,8 @@ import '../../features/admin/admin_dashboard_page.dart';
 import '../../features/admin/user_management_page.dart';
 import '../../features/admin/job_moderation_page.dart';
 import '../../features/admin/user_approval_page.dart';
+import '../../features/admin/screens/system_logs_page.dart';
+import '../../features/admin/screens/admin_settings_page.dart';
 import '../../features/seeker/applications/my_applications_page.dart';
 import '../../features/seeker/applications/application_detail_page.dart';
 import '../../features/seeker/profile/seeker_profile_page.dart';
@@ -222,6 +224,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/jobs',
         name: 'admin-jobs',
         builder: (context, state) => const JobModerationPage(),
+      ),
+      GoRoute(
+        path: '/admin/logs',
+        name: 'admin-logs',
+        builder: (context, state) => const SystemLogsPage(),
+      ),
+      GoRoute(
+        path: '/admin/settings',
+        name: 'admin-settings',
+        builder: (context, state) => const AdminSettingsPage(),
       ),
 
       GoRoute(

@@ -4,6 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { MailerService } from "./utils/mailer";
 import { FCMService } from "./utils/fcm";
 import { NOTIFICATION_TEMPLATES, APPLICATION_STATUS_LABELS, ApplicationStatus } from "./utils/templates";
+import { testEmail } from "./test-email";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -111,6 +112,14 @@ export const onUserApprovalUpdate = functions.firestore
 </body></html>`;
         const text = `Hello ${userName},\n\nYour account has been approved. Welcome to JobHunt!`;
         await mailer.sendBasicEmail(userEmail, userName, subject, html, text);
+        await admin.firestore().collection("email_logs").add({
+          to: userEmail,
+          toName: userName,
+          subject,
+          context: "user_approval",
+          status: "sent",
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
       } else if (afterStatus === "rejected") {
         const subject = "Account Review Update";
         const reason = (after.rejectionReason as string) || "Not specified";
@@ -125,9 +134,26 @@ export const onUserApprovalUpdate = functions.firestore
 </body></html>`;
         const text = `Hello ${userName},\n\nWe are unable to approve your account at this time. Reason: ${reason}`;
         await mailer.sendBasicEmail(userEmail, userName, subject, html, text);
+        await admin.firestore().collection("email_logs").add({
+          to: userEmail,
+          toName: userName,
+          subject,
+          context: "user_rejection",
+          status: "sent",
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
       }
     } catch (error) {
       functions.logger.error("Failed to send approval/rejection email", { error, userId: context.params.userId });
+      await admin.firestore().collection("email_logs").add({
+        to: userEmail,
+        toName: userName,
+        subject: afterStatus === "approved" ? "Account Approved - Welcome to JobHunt!" : "Account Review Update",
+        context: afterStatus,
+        status: "error",
+        error: (error as any)?.message || String(error),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     }
   });
 
@@ -269,10 +295,78 @@ export const sendEmail = functions.https.onRequest(async (req, res) => {
   try {
     const mailer = MailerService.getInstance();
     await mailer.sendBasicEmail(to, toName, subject, htmlContent, textContent);
+    await admin.firestore().collection("email_logs").add({
+      to,
+      toName,
+      subject,
+      context: "https_email",
+      status: "sent",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
     res.json({ success: true });
   } catch (error) {
     functions.logger.error("Failed to send email via HTTPS endpoint", { error });
+    await admin.firestore().collection("email_logs").add({
+      to,
+      toName,
+      subject,
+      context: "https_email",
+      status: "error",
+      error: (error as any)?.message || String(error),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
     res.status(500).json({ error: "Failed to send email" });
+  }
+});
+
+/**
+ * 8. Send Email (Callable)
+ * Allows client to send email via Gmail SMTP securely
+ */
+export const sendEmailViaHttps = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Authentication required");
+  }
+
+  const to = data.to as string | undefined;
+  const toName = (data.toName as string) || "User";
+  const subject = data.subject as string | undefined;
+  const htmlContent = data.htmlContent as string | undefined;
+  const textContent = (data.textContent as string) || undefined;
+
+  if (!to || !subject || !htmlContent) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required fields: to, subject, htmlContent"
+    );
+  }
+
+  try {
+    const mailer = MailerService.getInstance();
+    await mailer.sendBasicEmail(to, toName, subject, htmlContent, textContent);
+    await admin.firestore().collection("email_logs").add({
+      to,
+      toName,
+      subject,
+      context: "callable_email",
+      status: "sent",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      callerUid: context.auth.uid,
+    });
+    return { success: true };
+  } catch (error) {
+    functions.logger.error("Failed to send email via callable", { error, callerUid: context.auth.uid });
+    await admin.firestore().collection("email_logs").add({
+      to,
+      toName,
+      subject,
+      context: "callable_email",
+      status: "error",
+      error: (error as any)?.message || String(error),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      callerUid: context.auth.uid,
+    });
+    throw new functions.https.HttpsError("internal", "Failed to send email");
   }
 });
 
@@ -536,6 +630,8 @@ export const onJobWrite = functions.firestore
  * 5. Weekly Digest (Scheduled Function)
  * Sends weekly job digest every Monday 08:00 Asia/Karachi
  */
+export { testEmail };
+
 export const digestWeekly = functions.pubsub
   .schedule("0 8 * * 1") // Every Monday at 8 AM
   .timeZone("Asia/Karachi")

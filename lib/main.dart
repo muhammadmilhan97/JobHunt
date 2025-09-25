@@ -13,6 +13,7 @@ import 'core/services/firebase_push_service.dart';
 import 'core/services/error_reporter.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/email_service.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'core/providers/router_provider.dart';
 import 'core/providers/localization_providers.dart';
 import 'core/widgets/app_lifecycle_handler.dart';
@@ -37,17 +38,14 @@ void main() async {
   await AnalyticsService.initialize();
   ErrorReporter.initialize();
 
-  // Initialize email service with SendGrid API key
-  final sendGridApiKey =
-      const String.fromEnvironment('SENDGRID_API_KEY', defaultValue: '')
-              .isNotEmpty
-          ? const String.fromEnvironment('SENDGRID_API_KEY')
-          : (dotenv.isInitialized
-              ? (dotenv.maybeGet('SENDGRID_API_KEY') ?? '')
-              : '');
-  if (sendGridApiKey.isNotEmpty) {
-    EmailService.initialize(sendGridApiKey);
+  // Initialize email service (Cloud Functions + optional SendGrid fallback)
+  String? sendGridFromEnv;
+  try {
+    sendGridFromEnv = dotenv.maybeGet('SENDGRID_API_KEY');
+  } catch (_) {
+    sendGridFromEnv = null;
   }
+  EmailService.initialize(sendGridFromEnv);
 
   // Set up background message handler for FCM
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

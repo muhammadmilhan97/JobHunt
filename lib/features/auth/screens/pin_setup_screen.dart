@@ -56,14 +56,13 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
         _handleBackButton(context);
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Set Up PIN'),
-          centerTitle: true,
-          elevation: 0,
+        appBar: BrandedAppBar(
+          title: 'Set Up PIN',
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => _handleBackButton(context),
           ),
+          elevation: 0,
         ),
         body: SafeArea(
           child: SingleChildScrollView(
