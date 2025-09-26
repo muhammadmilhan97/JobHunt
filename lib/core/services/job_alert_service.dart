@@ -91,7 +91,7 @@ class JobAlertService {
         print(
             'Successfully sent job alerts to ${eligibleRecipients.length} users for job: ${job.title}');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       ErrorReporter.reportError(
         'Failed to send job alerts',
         'Exception occurred while sending job alerts: ${e.toString()}',
@@ -146,42 +146,28 @@ class JobAlertService {
         return;
       }
 
-      final recipients = jobSeekersQuery.docs.map((doc) {
+      // Send weekly digest individually using template and Gmail SMTP via Cloud Function
+      for (final doc in jobSeekersQuery.docs) {
         final userProfile = UserProfile.fromFirestore(doc);
-        return EmailRecipient(
-          email: userProfile.email,
-          name: userProfile.name,
-          substitutions: {
-            'user_name': userProfile.name,
-            'job_count': recentJobs.length.toString(),
-          },
+        final ok = await EmailService.sendWeeklyDigest(
+          to: userProfile.email,
+          toName: userProfile.name,
+          category: userProfile.preferredCategories.isNotEmpty
+              ? userProfile.preferredCategories.first
+              : 'Jobs',
+          jobs: recentJobs,
         );
-      }).toList();
-
-      // Send weekly digest in batches
-      const batchSize = 100;
-      for (int i = 0; i < recipients.length; i += batchSize) {
-        final batch = recipients.skip(i).take(batchSize).toList();
-
-        await EmailService.sendJobAlerts(
-          recipients: batch,
-          newJobs: recentJobs,
-        );
-
         if (kDebugMode) {
-          print('Sent weekly digest to batch of ${batch.length} users');
+          print('Weekly digest to ${userProfile.email}: $ok');
         }
-
-        // Small delay between batches
-        if (i + batchSize < recipients.length) {
-          await Future.delayed(const Duration(seconds: 1));
-        }
+        await Future.delayed(const Duration(milliseconds: 50));
       }
 
       if (kDebugMode) {
-        print('Successfully sent weekly digest to ${recipients.length} users');
+        print(
+            'Successfully processed weekly digest for ${jobSeekersQuery.docs.length} users');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       ErrorReporter.reportError(
         'Failed to send weekly job digest',
         'Exception occurred while sending weekly digest: ${e.toString()}',
@@ -268,7 +254,7 @@ class JobAlertService {
       }
 
       return true;
-    } catch (e, stackTrace) {
+    } catch (e) {
       ErrorReporter.reportError(
         'Failed to update email preferences',
         'Exception occurred while updating email preferences: ${e.toString()}',

@@ -9,6 +9,7 @@ import '../../../core/widgets/notification_bell_icon.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../widgets/job_card.dart';
 import '../../../core/providers/favorites_providers.dart';
+import '../../../core/utils/currency.dart';
 
 class SeekerHomePage extends ConsumerStatefulWidget {
   const SeekerHomePage({super.key});
@@ -23,7 +24,6 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
   String? _selectedType;
   double _minSalary = 0;
   double _maxSalary = 500000;
-  final Set<String> _savedJobs = {};
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +31,6 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
       builder: (context, ref, child) {
         final jobsAsync = ref.watch(latestJobsProvider);
         final categoriesAsync = ref.watch(categoriesProvider);
-        final citiesAsync = ref.watch(citiesProvider);
 
         return Scaffold(
           appBar: BrandedAppBar(
@@ -427,7 +426,6 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
       isScrollControlled: true,
       builder: (context) => Consumer(
         builder: (context, ref, child) {
-          final citiesAsync = ref.watch(citiesProvider);
           final typesAsync = ref.watch(jobTypesProvider);
 
           return DraggableScrollableSheet(
@@ -472,32 +470,32 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
-                        citiesAsync.when(
-                          data: (cities) => DropdownButtonFormField<String>(
-                            value: _selectedCity,
-                            decoration: const InputDecoration(
-                              hintText: 'Select city',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: [
-                              const DropdownMenuItem<String>(
-                                value: null,
-                                child: Text('Any city'),
+                        ref.watch(citiesProvider).when(
+                              data: (cities) => DropdownButtonFormField<String>(
+                                value: _selectedCity,
+                                decoration: const InputDecoration(
+                                  hintText: 'Select city',
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<String>(
+                                    value: null,
+                                    child: Text('Any city'),
+                                  ),
+                                  ...cities.map((city) => DropdownMenuItem(
+                                        value: city,
+                                        child: Text(city),
+                                      )),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedCity = value;
+                                  });
+                                },
                               ),
-                              ...cities.map((city) => DropdownMenuItem(
-                                    value: city,
-                                    child: Text(city),
-                                  )),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedCity = value;
-                              });
-                            },
-                          ),
-                          loading: () => const CircularProgressIndicator(),
-                          error: (error, stack) => Text('Error: $error'),
-                        ),
+                              loading: () => const CircularProgressIndicator(),
+                              error: (error, stack) => Text('Error: $error'),
+                            ),
                         const SizedBox(height: 24),
 
                         // Job type filter
@@ -541,7 +539,7 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '\$${_formatSalaryValue(_minSalary)} - \$${_formatSalaryValue(_maxSalary)}',
+                          '₨ ${CurrencyFormatter.compact(_minSalary)} - ₨ ${CurrencyFormatter.compact(_maxSalary)}',
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
@@ -556,8 +554,8 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
                           max: 500000,
                           divisions: 50,
                           labels: RangeLabels(
-                            _formatSalaryValue(_minSalary),
-                            _formatSalaryValue(_maxSalary),
+                            CurrencyFormatter.compact(_minSalary),
+                            CurrencyFormatter.compact(_maxSalary),
                           ),
                           onChanged: (values) {
                             setState(() {
@@ -609,24 +607,7 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
     );
   }
 
-  String _formatSalaryValue(double value) {
-    if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(0)}k';
-    }
-    return value.toStringAsFixed(0);
-  }
-
   void _navigateToJobDetail(String jobId) {
     context.push('/seeker/job/$jobId');
-  }
-
-  void _toggleSaveJob(String jobId) {
-    setState(() {
-      if (_savedJobs.contains(jobId)) {
-        _savedJobs.remove(jobId);
-      } else {
-        _savedJobs.add(jobId);
-      }
-    });
   }
 }

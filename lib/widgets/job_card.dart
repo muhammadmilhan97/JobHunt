@@ -4,6 +4,7 @@ import '../core/models/job.dart';
 import '../core/providers/favorites_providers.dart';
 import '../core/services/analytics_service.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../core/utils/currency.dart';
 
 class JobCard extends ConsumerWidget {
   final Job job;
@@ -113,14 +114,28 @@ class JobCard extends ConsumerWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(
-                    Icons.attach_money,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'PKR',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Text(
-                    _formatSalary(job.salaryMin, job.salaryMax),
+                    CurrencyFormatter.formatPkrRange(
+                        job.salaryMin, job.salaryMax),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -139,16 +154,5 @@ class JobCard extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _formatSalary(int? min, int? max) {
-    if (min != null && max != null) {
-      return '\$${min.toStringAsFixed(0)} - \$${max.toStringAsFixed(0)}';
-    } else if (min != null) {
-      return 'From \$${min.toStringAsFixed(0)}';
-    } else if (max != null) {
-      return 'Up to \$${max.toStringAsFixed(0)}';
-    }
-    return 'Not specified';
   }
 }

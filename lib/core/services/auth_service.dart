@@ -116,6 +116,20 @@ class AuthService {
           }
         }
 
+        // Auto-send account created (pending approval) email to the user
+        if (EmailConfig.isConfigured) {
+          try {
+            await EmailService.sendAccountCreatedEmail(
+              to: email,
+              toName: name,
+              userRole: role,
+            );
+          } catch (e) {
+            // Non-fatal: just log
+            print('Failed to send account created email: $e');
+          }
+        }
+
         // Log analytics
         await AnalyticsService.logSignUp(role: role);
         await AnalyticsService.setUserProperties(

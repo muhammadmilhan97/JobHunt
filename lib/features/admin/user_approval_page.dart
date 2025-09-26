@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/providers/admin_approval_providers.dart';
 import '../../core/providers/auth_providers.dart';
 import '../../core/widgets/app_logo.dart';
+import '../../core/services/email_notifications.dart';
 
 class UserApprovalPage extends ConsumerStatefulWidget {
   const UserApprovalPage({super.key});
@@ -465,6 +466,15 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
 
     if (mounted) {
       if (result.isSuccess) {
+        // Fire-and-forget: send approval and welcome emails via Vercel endpoint
+        // (Does not block UI. Failures are ignored but can be seen in Vercel logs.)
+        () async {
+          final to = (user['email'] as String?) ?? '';
+          final name = (user['name'] as String?) ?? 'User';
+          final role = (user['role'] as String?) ?? 'user';
+          await EmailNotifications.onApproved(to: to, name: name, role: role);
+        }();
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(

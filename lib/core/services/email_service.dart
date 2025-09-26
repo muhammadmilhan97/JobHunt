@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../models/email_template.dart';
@@ -7,15 +5,11 @@ import 'error_reporter.dart';
 import '../config/email_config.dart';
 
 class EmailService {
-  static const String _baseUrl = 'https://api.sendgrid.com/v3';
-  static String? _apiKey;
   static bool _isInitialized = false;
   static FirebaseFunctions? _functions;
 
-  /// Initialize the EmailService
-  /// SendGrid path kept for backward compatibility; not required for SMTP via CF.
-  static void initialize([String? apiKey]) {
-    _apiKey = apiKey;
+  /// Initialize the EmailService (Cloud Functions/Gmail SMTP)
+  static void initialize([String? _unused]) {
     _isInitialized = true;
     try {
       _functions = FirebaseFunctions.instance;
@@ -23,7 +17,7 @@ class EmailService {
       _functions = null;
     }
     if (kDebugMode) {
-      print('EmailService initialized (Cloud Functions + optional SendGrid)');
+      print('EmailService initialized (Cloud Functions via Gmail SMTP)');
     }
   }
 
@@ -48,7 +42,7 @@ class EmailService {
       return false;
     }
 
-    // Prefer Cloud Functions callable for SMTP via Gmail
+    // Use Cloud Functions callable for SMTP via Gmail
     try {
       final callable = (_functions ?? FirebaseFunctions.instance)
           .httpsCallable('sendEmailViaHttps');
@@ -66,55 +60,9 @@ class EmailService {
       }
       return true;
     } catch (e) {
-      // Fallback to SendGrid (legacy) if configured
-      if (_apiKey?.isNotEmpty == true) {
-        try {
-          final response = await http.post(
-            Uri.parse('$_baseUrl/mail/send'),
-            headers: {
-              'Authorization': 'Bearer $_apiKey',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'personalizations': [
-                {
-                  'to': [
-                    {
-                      'email': to,
-                      'name': toName,
-                    }
-                  ],
-                }
-              ],
-              'from': {
-                'email': fromEmail ?? EmailConfig.defaultFromEmail,
-                'name': fromName ?? EmailConfig.defaultFromName,
-              },
-              'subject': subject,
-              'content': [
-                if (textContent != null)
-                  {
-                    'type': 'text/plain',
-                    'value': textContent,
-                  },
-                {
-                  'type': 'text/html',
-                  'value': htmlContent,
-                },
-              ],
-            }),
-          );
-          if (response.statusCode == 202) {
-            if (kDebugMode) {
-              print('Email sent successfully to $to via SendGrid fallback');
-            }
-            return true;
-          }
-        } catch (_) {}
-      }
       ErrorReporter.reportError(
         'Email send failed',
-        'Both Cloud Function and SendGrid fallback failed: ${e.toString()}',
+        'Cloud Function email send failed: ${e.toString()}',
       );
       return false;
     }
@@ -137,66 +85,27 @@ class EmailService {
       return false;
     }
 
-    try {
-      final personalizations = recipients
-          .map((recipient) => {
-                'to': [
-                  {
-                    'email': recipient.email,
-                    'name': recipient.name,
-                  }
-                ],
-                'substitutions': recipient.substitutions,
-              })
-          .toList();
-
-      final response = await http.post(
-        Uri.parse('$_baseUrl/mail/send'),
-        headers: {
-          'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'personalizations': personalizations,
-          'from': {
-            'email': fromEmail ?? EmailConfig.defaultFromEmail,
-            'name': fromName ?? EmailConfig.defaultFromName,
-          },
-          'subject': subject,
-          'content': [
-            if (textTemplate != null)
-              {
-                'type': 'text/plain',
-                'value': textTemplate,
-              },
-            {
-              'type': 'text/html',
-              'value': htmlTemplate,
-            },
-          ],
-        }),
+    // Loop through recipients and call sendEmail via Cloud Function
+    var allSucceeded = true;
+    for (final recipient in recipients) {
+      final ok = await sendEmail(
+        to: recipient.email,
+        toName: recipient.name,
+        subject: subject,
+        htmlContent: htmlTemplate,
+        textContent: textTemplate,
+        fromEmail: fromEmail,
+        fromName: fromName,
       );
-
-      if (response.statusCode == 202) {
-        if (kDebugMode) {
-          print(
-              'Bulk emails sent successfully to ${recipients.length} recipients');
-        }
-        return true;
-      } else {
-        ErrorReporter.reportError(
-          'SendGrid bulk email API error: ${response.statusCode}',
-          'Failed to send bulk emails via SendGrid API. Body: ${response.body}',
-        );
-        return false;
-      }
-    } catch (e) {
-      ErrorReporter.reportError(
-        'Failed to send bulk emails',
-        'Exception occurred while sending bulk emails: ${e.toString()}',
-      );
-      return false;
+      if (!ok) allSucceeded = false;
+      // Gentle pacing to avoid rapid-fire callable invocations
+      await Future.delayed(const Duration(milliseconds: 50));
     }
+    if (kDebugMode) {
+      print(
+          'Bulk emails attempted for ${recipients.length} recipients. Success: $allSucceeded');
+    }
+    return allSucceeded;
   }
 
   /// Send OTP verification email
@@ -228,6 +137,99 @@ class EmailService {
     final template = EmailTemplates.welcome(
       recipientName: toName,
       userRole: userRole,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: template.subject,
+      htmlContent: template.htmlContent,
+      textContent: template.textContent,
+    );
+  }
+
+  /// Send account-created (pending approval) email
+  static Future<bool> sendAccountCreatedEmail({
+    required String to,
+    required String toName,
+    required String userRole,
+  }) async {
+    final template = EmailTemplates.accountCreated(
+      recipientName: toName,
+      userRole: userRole,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: template.subject,
+      htmlContent: template.htmlContent,
+      textContent: template.textContent,
+    );
+  }
+
+  /// Send approval email
+  static Future<bool> sendApprovalEmail({
+    required String to,
+    required String toName,
+    required String userRole,
+  }) async {
+    final template = EmailTemplates.approval(
+      recipientName: toName,
+      userRole: userRole,
+    );
+
+    final sent = await sendEmail(
+      to: to,
+      toName: toName,
+      subject: template.subject,
+      htmlContent: template.htmlContent,
+      textContent: template.textContent,
+    );
+
+    // Also send welcome email after approval
+    if (sent) {
+      await sendWelcomeEmail(to: to, toName: toName, userRole: userRole);
+    }
+
+    return sent;
+  }
+
+  /// Send rejection email
+  static Future<bool> sendRejectionEmail({
+    required String to,
+    required String toName,
+    required String userRole,
+    required String reason,
+  }) async {
+    final template = EmailTemplates.rejection(
+      recipientName: toName,
+      userRole: userRole,
+      reason: reason,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: template.subject,
+      htmlContent: template.htmlContent,
+      textContent: template.textContent,
+    );
+  }
+
+  /// Send application status email
+  static Future<bool> sendApplicationStatusEmail({
+    required String to,
+    required String toName,
+    required String jobTitle,
+    required String companyName,
+    required String status,
+  }) async {
+    final template = EmailTemplates.applicationStatus(
+      recipientName: toName,
+      jobTitle: jobTitle,
+      companyName: companyName,
+      status: status,
     );
 
     return await sendEmail(
@@ -273,6 +275,28 @@ class EmailService {
       subject: template.subject,
       htmlTemplate: template.htmlContent,
       textTemplate: template.textContent,
+    );
+  }
+
+  /// Send weekly digest to a single recipient
+  static Future<bool> sendWeeklyDigest({
+    required String to,
+    required String toName,
+    required String category,
+    required List<Map<String, dynamic>> jobs,
+  }) async {
+    final template = EmailTemplates.weeklyDigest(
+      recipientName: toName,
+      category: category,
+      jobs: jobs,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: template.subject,
+      htmlContent: template.htmlContent,
+      textContent: template.textContent,
     );
   }
 }

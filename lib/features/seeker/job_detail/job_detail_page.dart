@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/models/job.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../widgets/job_card.dart';
+import '../../../core/utils/currency.dart';
 import '../../../widgets/apply_bottom_sheet.dart';
 
 class JobDetailPage extends ConsumerStatefulWidget {
@@ -66,8 +66,8 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
                 Text(
                   'Description',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -81,8 +81,8 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
                   Text(
                     'Requirements',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -97,17 +97,21 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
                   Text(
                     'Skills',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 4,
-                    children: job.skills.map((skill) => Chip(
-                      label: Text(skill),
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    )).toList(),
+                    children: job.skills
+                        .map((skill) => Chip(
+                              label: Text(skill),
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                            ))
+                        .toList(),
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -121,9 +125,10 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
                       children: [
                         Text(
                           'Additional Details',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 12),
                         _DetailRow(
@@ -147,10 +152,76 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
                           value: job.type,
                         ),
                         if (job.salaryMin != null || job.salaryMax != null)
-                          _DetailRow(
-                            icon: Icons.attach_money,
-                            label: 'Salary',
-                            value: _formatSalary(job.salaryMin, job.salaryMax),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.monetization_on_outlined,
+                                  size: 20,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Salary',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                                  .withOpacity(0.08),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              'PKR',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelSmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            CurrencyFormatter.formatPkrRange(
+                                              job.salaryMin,
+                                              job.salaryMax,
+                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         _DetailRow(
                           icon: Icons.schedule,
@@ -187,7 +258,7 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
       bottomNavigationBar: jobAsync.when(
         data: (job) {
           if (job == null) return null;
-          
+
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -213,17 +284,6 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
       ),
       builder: (context) => ApplyBottomSheet(job: job),
     );
-  }
-
-  String _formatSalary(int? min, int? max) {
-    if (min != null && max != null) {
-      return '\$${min.toStringAsFixed(0)} - \$${max.toStringAsFixed(0)}';
-    } else if (min != null) {
-      return 'From \$${min.toStringAsFixed(0)}';
-    } else if (max != null) {
-      return 'Up to \$${max.toStringAsFixed(0)}';
-    }
-    return 'Not specified';
   }
 
   String _formatDate(DateTime date) {
@@ -268,8 +328,8 @@ class _DetailRow extends StatelessWidget {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
                 Text(
                   value,

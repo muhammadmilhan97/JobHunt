@@ -100,15 +100,24 @@ export const onUserApprovalUpdate = functions.firestore
 
     try {
       if (afterStatus === "approved") {
-        const roleDisplay = userRole === "employer" ? "Employer" : userRole === "job_seeker" ? "Job Seeker" : "Administrator";
+        // Branded approval email
         const subject = "Account Approved - Welcome to JobHunt!";
-        const html = `
-<!DOCTYPE html>
-<html><body style="font-family:Arial,sans-serif">
-  <h2>🎉 Account Approved!</h2>
-  <p>Hello ${userName},</p>
-  <p>Your account as a <strong>${roleDisplay}</strong> has been approved. You can now sign in and start using JobHunt.</p>
-  <p>Best regards,<br/>JobHunt Team</p>
+        const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:#374151">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)">
+    <div style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);padding:24px;text-align:center;color:#fff">
+      <h1 style="margin:0;font-size:24px;font-weight:600">JobHunt</h1>
+    </div>
+    <div style="padding:28px">
+      <h2 style="color:#2563eb;margin:0 0 12px 0;font-size:20px;font-weight:600">🎉 Account Approved!</h2>
+      <p style="margin:12px 0">Hello ${userName},</p>
+      <p style="margin:12px 0">Your account has been approved. You can now sign in and start using JobHunt.</p>
+      <a href="#" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600;margin-top:12px">Open JobHunt</a>
+      <p style="margin:16px 0">Best regards,<br/>The JobHunt Team</p>
+    </div>
+    <div style="background:#f8fafc;padding:18px 24px;text-align:center;color:#6b7280;font-size:12px;border-top:1px solid #e5e7eb">© 2024 JobHunt</div>
+  </div>
 </body></html>`;
         const text = `Hello ${userName},\n\nYour account has been approved. Welcome to JobHunt!`;
         await mailer.sendBasicEmail(userEmail, userName, subject, html, text);
@@ -123,14 +132,22 @@ export const onUserApprovalUpdate = functions.firestore
       } else if (afterStatus === "rejected") {
         const subject = "Account Review Update";
         const reason = (after.rejectionReason as string) || "Not specified";
-        const html = `
-<!DOCTYPE html>
-<html><body style="font-family:Arial,sans-serif">
-  <h2>Account Review Update</h2>
-  <p>Hello ${userName},</p>
-  <p>We are unable to approve your account at this time.</p>
-  <p><strong>Reason:</strong> ${reason}</p>
-  <p>Best regards,<br/>JobHunt Team</p>
+        const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:#374151">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)">
+    <div style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);padding:24px;text-align:center;color:#fff">
+      <h1 style="margin:0;font-size:24px;font-weight:600">JobHunt</h1>
+    </div>
+    <div style="padding:28px">
+      <h2 style="color:#2563eb;margin:0 0 12px 0;font-size:20px;font-weight:600">Account Review Update</h2>
+      <p style="margin:12px 0">Hello ${userName},</p>
+      <p style="margin:12px 0">We are unable to approve your account at this time.</p>
+      <p style="margin:12px 0"><strong>Reason:</strong> ${reason}</p>
+      <p style="margin:16px 0">Best regards,<br/>The JobHunt Team</p>
+    </div>
+    <div style="background:#f8fafc;padding:18px 24px;text-align:center;color:#6b7280;font-size:12px;border-top:1px solid #e5e7eb">© 2024 JobHunt</div>
+  </div>
 </body></html>`;
         const text = `Hello ${userName},\n\nWe are unable to approve your account at this time. Reason: ${reason}`;
         await mailer.sendBasicEmail(userEmail, userName, subject, html, text);

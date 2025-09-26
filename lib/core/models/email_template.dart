@@ -16,7 +16,7 @@ class EmailTemplates {
   static const String _secondaryColor = '#f8fafc';
   static const String _textColor = '#374151';
   static const String _logoUrl =
-      'https://your-app-domain.com/assets/logo.png'; // Update with your actual logo URL
+      'https://res.cloudinary.com/dd09znqy6/image/upload/v1758813785/JobHunt_Logo_vvzell.png';
 
   /// Base HTML template with branding
   static String _baseTemplate({
@@ -207,6 +207,107 @@ If you didn't create a JobHunt account, please ignore this email.
 Best regards,
 The JobHunt Team
 ''',
+    );
+  }
+
+  /// Account Created (Pending Approval)
+  static EmailTemplate accountCreated({
+    required String recipientName,
+    required String userRole,
+  }) {
+    final content = '''
+        <h2>Account Created ✅</h2>
+        <p>Hello $recipientName,</p>
+        <p>Thanks for registering as a <strong>${userRole.replaceAll('_', ' ')}</strong> on JobHunt.</p>
+        <p>Your account is currently <strong>pending admin approval</strong>. We'll email you once it's approved.</p>
+        <a href="#" class="button">Open JobHunt</a>
+        <p style="color:#6b7280;font-size:14px;">If you didn't create this account, please ignore this email.</p>
+    ''';
+
+    return EmailTemplate(
+      subject: 'Welcome to JobHunt — Account Created',
+      htmlContent: _baseTemplate(
+        title: 'Welcome to JobHunt',
+        content: content,
+      ),
+      textContent:
+          'Hello $recipientName, your ${userRole.replaceAll('_', ' ')} account was created and is pending approval.',
+    );
+  }
+
+  /// Admin Approval
+  static EmailTemplate approval({
+    required String recipientName,
+    required String userRole,
+  }) {
+    final content = '''
+        <h2>🎉 Account Approved!</h2>
+        <p>Hello $recipientName,</p>
+        <p>Your account as a <strong>${userRole.replaceAll('_', ' ')}</strong> has been approved. You can now sign in and start using JobHunt.</p>
+        <a href="#" class="button">Open JobHunt</a>
+        <p>We’re excited to have you onboard.</p>
+    ''';
+
+    return EmailTemplate(
+      subject: 'Account Approved - Welcome to JobHunt!',
+      htmlContent: _baseTemplate(
+        title: 'Account Approved',
+        content: content,
+      ),
+      textContent:
+          'Hello $recipientName, your ${userRole.replaceAll('_', ' ')} account has been approved.',
+    );
+  }
+
+  /// Admin Rejection
+  static EmailTemplate rejection({
+    required String recipientName,
+    required String userRole,
+    required String reason,
+  }) {
+    final content = '''
+        <h2>Account Review Update</h2>
+        <p>Hello $recipientName,</p>
+        <p>Thank you for your interest in joining JobHunt as a <strong>${userRole.replaceAll('_', ' ')}</strong>.</p>
+        <p>After careful review, we’re unable to approve your account at this time.</p>
+        <p><strong>Reason:</strong> $reason</p>
+        <p>If you believe this is a mistake, please reply to this email.</p>
+    ''';
+
+    return EmailTemplate(
+      subject: 'JobHunt Account Update',
+      htmlContent: _baseTemplate(
+        title: 'Account Review Update',
+        content: content,
+      ),
+      textContent:
+          'Hello $recipientName, your ${userRole.replaceAll('_', ' ')} account was not approved. Reason: $reason',
+    );
+  }
+
+  /// Application Status Update
+  static EmailTemplate applicationStatus({
+    required String recipientName,
+    required String jobTitle,
+    required String companyName,
+    required String status,
+  }) {
+    final content = '''
+        <h2>Application Status Update</h2>
+        <p>Hello $recipientName,</p>
+        <p>Your application for <strong>$jobTitle</strong> at <strong>$companyName</strong> has been updated to <strong>$status</strong>.</p>
+        <a href="#" class="button">View Application</a>
+        <p>Good luck!</p>
+    ''';
+
+    return EmailTemplate(
+      subject: 'Update on Your Application for "$jobTitle"',
+      htmlContent: _baseTemplate(
+        title: 'Application Status Update',
+        content: content,
+      ),
+      textContent:
+          'Hello $recipientName, your application for $jobTitle at $companyName is now $status.',
     );
   }
 
@@ -419,6 +520,58 @@ View all jobs: [Link]
 
 Happy job hunting!
 The JobHunt Team
+''',
+    );
+  }
+
+  /// Weekly Digest Email Template
+  static EmailTemplate weeklyDigest({
+    required String recipientName,
+    required String category,
+    required List<Map<String, dynamic>> jobs,
+  }) {
+    final jobsHtml = jobs.map((job) => '''
+        <div class="job-card">
+            <div class="job-title">${job['title'] ?? 'Job Title'}</div>
+            <div class="job-company">${job['companyName'] ?? job['company'] ?? 'Company'}</div>
+            ${job['location'] != null ? '<div class="job-location">📍 ${job['location']}</div>' : ''}
+            ${job['salaryRange'] != null ? '<p style="margin: 8px 0 0 0; color:#374151;">💰 ${job['salaryRange']}</p>' : ''}
+            <a href="${job['url'] ?? '#'}" class="button" style="font-size: 14px; padding: 8px 16px;">View Details</a>
+        </div>
+    ''').join('');
+
+    final content = '''
+        <h2>🗓️ Your Weekly Job Digest</h2>
+        <p>Hello $recipientName,</p>
+        <p>Here are ${jobs.length} new jobs in <strong>$category</strong> that match your preferences.</p>
+
+        $jobsHtml
+
+        <p style="text-align: center; margin: 30px 0;">
+            <a href="#" class="button">Browse More Jobs</a>
+        </p>
+
+        <p>Good luck with your applications!<br>The JobHunt Team</p>
+    ''';
+
+    return EmailTemplate(
+      subject: '🗓️ Weekly Digest: ${jobs.length} new $category jobs for you',
+      htmlContent: _baseTemplate(
+        title: 'Weekly Job Digest',
+        content: content,
+      ),
+      textContent: '''
+Hello $recipientName,
+
+Here are ${jobs.length} new jobs in $category:
+
+${jobs.map((job) => '''
+- ${job['title'] ?? 'Job Title'} at ${job['companyName'] ?? job['company'] ?? 'Company'}${job['location'] != null ? ' — ' + job['location'] : ''}
+''').join('')}
+
+Browse more jobs in the app.
+
+— JobHunt Team
 ''',
     );
   }
