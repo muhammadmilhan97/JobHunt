@@ -24,6 +24,7 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
   String? _selectedType;
   double _minSalary = 0;
   double _maxSalary = 500000;
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +108,9 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
                             .withOpacity(0.5),
                       ),
                       onChanged: (value) {
-                        // TODO: Implement search functionality
+                        setState(() {
+                          _searchQuery = value.trim();
+                        });
                       },
                     ),
                   ),
@@ -119,7 +122,12 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
                     height: 60,
                     child: categoriesAsync.when(
                       data: (categories) {
-                        final allCategories = ['All', ...categories];
+                        // Remove duplicates and any existing 'All'
+                        final unique = categories
+                            .where((c) => c.trim().isNotEmpty && c != 'All')
+                            .toSet()
+                            .toList();
+                        final allCategories = ['All', ...unique];
                         return ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -293,6 +301,18 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
 
   List<Job> _filterJobs(List<Job> jobs) {
     return jobs.where((job) {
+      // Search filter (title, company, description, skills)
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase();
+        final inTitle = job.title.toLowerCase().contains(q);
+        final inCompany = job.company.toLowerCase().contains(q);
+        final inDesc = job.description.toLowerCase().contains(q);
+        final inSkills = job.skills.any((s) => s.toLowerCase().contains(q));
+        if (!(inTitle || inCompany || inDesc || inSkills)) {
+          return false;
+        }
+      }
+
       // Category filter
       if (_selectedCategory != 'All' && job.category != _selectedCategory) {
         return false;
@@ -314,7 +334,7 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
         }
       }
 
-      // Salary filter
+      // Salary filter (respect nulls: if salary not provided, don't exclude)
       if (job.salaryMin != null && job.salaryMin! < _minSalary) {
         return false;
       }
@@ -424,45 +444,45 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: false,
       builder: (context) => Consumer(
         builder: (context, ref, child) {
           final typesAsync = ref.watch(jobTypesProvider);
+          // Use local state inside the sheet to avoid gesture/state conflicts
+          double localMin = _minSalary;
+          double localMax = _maxSalary;
 
-          return DraggableScrollableSheet(
-            initialChildSize: 0.7,
-            minChildSize: 0.5,
-            maxChildSize: 0.9,
-            expand: false,
-            builder: (context, scrollController) => Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Handle
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
+          return StatefulBuilder(
+            builder: (context, setLocal) => SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Title
-                  Text(
-                    'Filter Jobs',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 24),
+                    // Title
+                    Text(
+                      'Filter Jobs',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 24),
 
-                  Expanded(
-                    child: ListView(
-                      controller: scrollController,
+                    // Content
+                    Column(
                       children: [
                         // City filter
                         Text(
@@ -539,7 +559,7 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '₨ ${CurrencyFormatter.compact(_minSalary)} - ₨ ${CurrencyFormatter.compact(_maxSalary)}',
+                          '₨ ${CurrencyFormatter.compact(localMin)} - ₨ ${CurrencyFormatter.compact(localMax)}',
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
@@ -548,57 +568,71 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
-                        RangeSlider(
-                          values: RangeValues(_minSalary, _maxSalary),
-                          min: 0,
-                          max: 500000,
-                          divisions: 50,
-                          labels: RangeLabels(
-                            CurrencyFormatter.compact(_minSalary),
-                            CurrencyFormatter.compact(_maxSalary),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 6,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 12,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 20,
+                            ),
                           ),
-                          onChanged: (values) {
-                            setState(() {
-                              _minSalary = values.start;
-                              _maxSalary = values.end;
-                            });
-                          },
+                          child: RangeSlider(
+                            values: RangeValues(localMin, localMax),
+                            min: 0,
+                            max: 500000,
+                            divisions: 50,
+                            labels: RangeLabels(
+                              CurrencyFormatter.compact(localMin),
+                              CurrencyFormatter.compact(localMax),
+                            ),
+                            onChanged: (values) {
+                              setLocal(() {
+                                localMin = values.start;
+                                localMax = values.end;
+                              });
+                            },
+                          ),
                         ),
                         const SizedBox(height: 32),
                       ],
                     ),
-                  ),
 
-                  // Apply button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        setState(() {}); // Trigger rebuild with new filters
-                      },
-                      child: const Text('Apply Filters'),
+                    // Apply button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            _minSalary = localMin;
+                            _maxSalary = localMax;
+                          });
+                        },
+                        child: const Text('Apply Filters'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Clear filters
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedCity = null;
-                          _selectedType = null;
-                          _minSalary = 0;
-                          _maxSalary = 500000;
-                        });
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Clear Filters'),
+                    // Clear filters
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedCity = null;
+                            _selectedType = null;
+                            _minSalary = 0;
+                            _maxSalary = 500000;
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Clear Filters'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
