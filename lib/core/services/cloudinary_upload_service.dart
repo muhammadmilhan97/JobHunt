@@ -1,132 +1,88 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart' as http_parser;
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:mime/mime.dart';
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
-
-/// Upload result model
-class UploadResult {
-  final String publicId;
-  final String secureUrl;
-  final String originalFilename;
-  final int bytes;
-  final String format;
-  final String resourceType;
-
-  UploadResult({
-    required this.publicId,
-    required this.secureUrl,
-    required this.originalFilename,
-    required this.bytes,
-    required this.format,
-    required this.resourceType,
-  });
-
-  factory UploadResult.fromJson(Map<String, dynamic> json) {
-    return UploadResult(
-      publicId: json['public_id'] ?? '',
-      secureUrl: json['secure_url'] ?? '',
-      originalFilename: json['original_filename'] ?? '',
-      bytes: json['bytes'] ?? 0,
-      format: json['format'] ?? '',
-      resourceType: json['resource_type'] ?? '',
-    );
-  }
-}
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 /// Upload progress callback
 typedef ProgressCallback = void Function(double progress);
 
-/// Service for handling signed Cloudinary uploads
-class CloudinaryUploadService {
-  static const String _functionBaseUrl =
-      'https://us-central1-jobhunt-dev-7b0ae.cloudfunctions.net';
+/// Upload result from Cloudinary
+class UploadResult {
+  final String secureUrl;
+  final String publicId;
+  final String format;
+  final int bytes;
 
-  /// Get signed upload parameters from Cloud Function
-  static Future<Map<String, dynamic>> _getSignedUploadParams({
-    required String folder,
-    required String preset,
-    String? publicId,
-  }) async {
-    try {
-      // Get current user's ID token
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception('User not authenticated');
-      }
+  UploadResult({
+    required this.secureUrl,
+    required this.publicId,
+    required this.format,
+    required this.bytes,
+  });
 
-      final idToken = await user.getIdToken();
-
-      // Call Cloud Function
-      final response = await http.post(
-        Uri.parse('$_functionBaseUrl/signCloudinaryUpload'),
-        headers: {
-          'Authorization': 'Bearer $idToken',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'folder': folder,
-          'preset': preset,
-          if (publicId != null) 'public_id': publicId,
-        }),
-      );
-
-      if (response.statusCode != 200) {
-        final errorData = jsonDecode(response.body);
-        throw Exception(
-            'Failed to get upload signature: ${errorData['error']}');
-      }
-
-      return jsonDecode(response.body);
-    } catch (e) {
-      debugPrint('Error getting signed upload params: $e');
-      rethrow;
-    }
-  }
-
-  /// Upload CV file to Cloudinary
-  static Future<UploadResult> uploadCV({
-    required File file,
-    String? customPublicId,
-    ProgressCallback? onProgress,
-  }) async {
-    return _uploadFile(
-      file: file,
-      folder: 'jobhunt-dev/cv',
-      preset: 'jobhunt_cv_signed',
-      customPublicId: customPublicId,
-      onProgress: onProgress,
+  factory UploadResult.fromJson(Map<String, dynamic> json) {
+    return UploadResult(
+      secureUrl: json['secure_url'] ?? '',
+      publicId: json['public_id'] ?? '',
+      format: json['format'] ?? '',
+      bytes: json['bytes'] ?? 0,
     );
   }
+}
 
-  /// Upload profile image to Cloudinary
+/// Service for handling Cloudinary uploads
+class CloudinaryUploadService {
+  // Cloudinary configuration
+  static const String _uploadUrl =
+      'https://api.cloudinary.com/v1_1/dd09znqy6/upload';
+
+  // Upload presets (these need to be configured in your Cloudinary dashboard)
+  static const String _imagePreset = 'jobhunt_images';
+  static const String _documentPreset = 'jobhunt_documents';
+
+  /// Upload a profile image
   static Future<UploadResult> uploadProfileImage({
     required File file,
     String? customPublicId,
     ProgressCallback? onProgress,
   }) async {
-    return _uploadFile(
+    return await _uploadFile(
       file: file,
-      folder: 'jobhunt-dev/profiles',
-      preset: 'jobhunt_profile_signed',
+      folder: 'jobhunt-dev/profile_images',
+      preset: _imagePreset,
       customPublicId: customPublicId,
       onProgress: onProgress,
     );
   }
 
-  /// Upload company logo to Cloudinary
+  /// Upload a CV document
+  static Future<UploadResult> uploadCV({
+    required File file,
+    String? customPublicId,
+    ProgressCallback? onProgress,
+  }) async {
+    return await _uploadFile(
+      file: file,
+      folder: 'jobhunt-dev/cv_documents',
+      preset: _documentPreset,
+      customPublicId: customPublicId,
+      onProgress: onProgress,
+    );
+  }
+
+  /// Upload a company logo
   static Future<UploadResult> uploadCompanyLogo({
     required File file,
     String? customPublicId,
     ProgressCallback? onProgress,
   }) async {
-    return _uploadFile(
+    return await _uploadFile(
       file: file,
-      folder: 'jobhunt-dev/logos',
-      preset: 'jobhunt_logo_signed',
+      folder: 'jobhunt-dev/company_logos',
+      preset: _imagePreset,
       customPublicId: customPublicId,
       onProgress: onProgress,
     );
@@ -173,24 +129,18 @@ class CloudinaryUploadService {
       // Generate public_id if not provided
       final publicId = customPublicId ?? _generatePublicId(fileName);
 
-      // Get signed upload parameters
-      final signedParams = await _getSignedUploadParams(
-        folder: folder,
-        preset: preset,
-        publicId: publicId,
-      );
+      debugPrint('Uploading to Cloudinary:');
+      debugPrint('  URL: $_uploadUrl');
+      debugPrint('  Preset: $preset');
+      debugPrint('  Folder: $folder');
+      debugPrint('  Public ID: $publicId');
+      debugPrint('  File: ${file.path}');
 
       // Prepare multipart request
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse(signedParams['upload_url']),
-      );
+      final request = http.MultipartRequest('POST', Uri.parse(_uploadUrl));
 
-      // Add form fields
+      // Add form fields for unsigned upload
       request.fields.addAll({
-        'api_key': signedParams['api_key'],
-        'timestamp': signedParams['timestamp'].toString(),
-        'signature': signedParams['signature'],
         'upload_preset': preset,
         'folder': folder,
         'public_id': publicId,
@@ -203,7 +153,7 @@ class CloudinaryUploadService {
         fileStream,
         fileSize,
         filename: fileName,
-        contentType: http_parser.MediaType.parse(mimeType),
+        contentType: MediaType.parse(mimeType),
       );
       request.files.add(multipartFile);
 
@@ -212,8 +162,6 @@ class CloudinaryUploadService {
 
       // Track upload progress (approximation)
       if (onProgress != null) {
-        // This is a simplified progress tracking
-        // For real progress, you'd need to implement a custom HTTP client
         onProgress(0.5); // Assume 50% when request is sent
       }
 
@@ -224,13 +172,32 @@ class CloudinaryUploadService {
         onProgress(1.0); // Complete
       }
 
+      debugPrint('Cloudinary upload response status: ${response.statusCode}');
+      debugPrint('Cloudinary upload response body: ${response.body}');
+
       if (response.statusCode != 200) {
-        final errorData = jsonDecode(response.body);
-        throw Exception(
-            'Upload failed: ${errorData['error']?['message'] ?? 'Unknown error'}');
+        try {
+          final errorData = jsonDecode(response.body);
+          final errorMessage =
+              errorData['error']?['message'] ?? 'Unknown error';
+
+          // If preset doesn't exist, try without preset
+          if (errorMessage.contains('preset') ||
+              errorMessage.contains('Invalid preset')) {
+            debugPrint('Preset failed, trying without preset...');
+            return await _uploadWithoutPreset(
+                file, folder, publicId, onProgress);
+          }
+
+          throw Exception('Upload failed: $errorMessage');
+        } catch (e) {
+          throw Exception(
+              'Upload failed with status ${response.statusCode}: ${response.body}');
+        }
       }
 
       final responseData = jsonDecode(response.body);
+      debugPrint('Upload successful: ${responseData['secure_url']}');
       return UploadResult.fromJson(responseData);
     } catch (e) {
       debugPrint('Error uploading file: $e');
@@ -239,6 +206,51 @@ class CloudinaryUploadService {
       }
       rethrow;
     }
+  }
+
+  /// Fallback upload without preset (for testing)
+  static Future<UploadResult> _uploadWithoutPreset(
+    File file,
+    String folder,
+    String publicId,
+    ProgressCallback? onProgress,
+  ) async {
+    debugPrint('Attempting upload without preset...');
+
+    final request = http.MultipartRequest('POST', Uri.parse(_uploadUrl));
+
+    // Minimal fields for unsigned upload
+    request.fields.addAll({
+      'folder': folder,
+      'public_id': publicId,
+    });
+
+    final fileStream = file.openRead();
+    final fileSize = await file.length();
+    final fileName = path.basename(file.path);
+    final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
+
+    final multipartFile = http.MultipartFile(
+      'file',
+      fileStream,
+      fileSize,
+      filename: fileName,
+      contentType: MediaType.parse(mimeType),
+    );
+    request.files.add(multipartFile);
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    debugPrint(
+        'Fallback upload response: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode != 200) {
+      throw Exception('Fallback upload failed: ${response.body}');
+    }
+
+    final responseData = jsonDecode(response.body);
+    return UploadResult.fromJson(responseData);
   }
 
   /// Generate a unique public_id for the file

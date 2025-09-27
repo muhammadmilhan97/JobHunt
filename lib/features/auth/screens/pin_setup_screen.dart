@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/pin_providers.dart';
 import '../../../core/widgets/app_logo.dart';
+import '../../../core/utils/back_button_handler.dart';
 
 class PinSetupScreen extends ConsumerStatefulWidget {
   final String? nextRoute;
@@ -49,18 +50,14 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
     final pinState = ref.watch(pinProvider);
     final theme = Theme.of(context);
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (didPop) return;
-        _handleBackButton(context);
-      },
+    return BackButtonHandler.createPopScope(
+      context: context,
       child: Scaffold(
         appBar: BrandedAppBar(
           title: 'Set Up PIN',
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => _handleBackButton(context),
+            onPressed: () => context.pop(),
           ),
           elevation: 0,
         ),
@@ -261,42 +258,6 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
             ),
           ),
         ),
-      ),
-    ); // End PopScope
-  }
-
-  void _handleBackButton(BuildContext context) {
-    if (_isConfirmMode) {
-      // If in confirm mode, go back to PIN entry
-      _goBack();
-    } else {
-      // If in PIN entry mode, show exit confirmation
-      _showExitConfirmation(context);
-    }
-  }
-
-  void _showExitConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Exit PIN Setup?'),
-        content: const Text(
-          'You need to set up a PIN to access your account. '
-          'Are you sure you want to go back?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.go('/auth'); // Go back to login
-            },
-            child: const Text('Go Back'),
-          ),
-        ],
       ),
     );
   }

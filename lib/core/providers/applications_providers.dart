@@ -18,6 +18,12 @@ final applicationByIdProvider =
   return repo.getById(id);
 });
 
+final applicationProvider =
+    StreamProvider.family<Application?, String>((ref, id) {
+  final repo = ref.watch(applicationsRepositoryProvider);
+  return repo.getById(id).asStream();
+});
+
 final applicationsForJobProvider =
     StreamProvider.family<List<Application>, String>((ref, jobId) {
   final applicationsRepository = ref.watch(applicationsRepositoryProvider);

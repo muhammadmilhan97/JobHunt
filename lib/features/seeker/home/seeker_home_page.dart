@@ -592,6 +592,11 @@ class _SeekerHomePageState extends ConsumerState<SeekerHomePage> {
                                 localMin = values.start;
                                 localMax = values.end;
                               });
+                              // Update the main state as well
+                              setState(() {
+                                _minSalary = values.start;
+                                _maxSalary = values.end;
+                              });
                             },
                           ),
                         ),

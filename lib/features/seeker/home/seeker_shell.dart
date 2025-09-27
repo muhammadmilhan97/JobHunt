@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/back_button_handler.dart';
 
 class SeekerShell extends StatefulWidget {
   final Widget child;
@@ -33,12 +33,8 @@ class _SeekerShellState extends State<SeekerShell> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (didPop) return;
-        _showExitConfirmation(context);
-      },
+    return BackButtonHandler.createPopScope(
+      context: context,
       child: Scaffold(
         body: widget.child,
         bottomNavigationBar: NavigationBar(
@@ -67,30 +63,6 @@ class _SeekerShellState extends State<SeekerShell> {
             ),
           ],
         ),
-      ),
-    ); // End PopScope
-  }
-
-  void _showExitConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Exit JobHunt?'),
-        content: const Text('Are you sure you want to exit the app?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Exit the app
-              SystemNavigator.pop();
-            },
-            child: const Text('Exit'),
-          ),
-        ],
       ),
     );
   }

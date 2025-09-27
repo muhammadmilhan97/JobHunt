@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
+import 'pdf_viewer_page.dart';
 import '../../../core/providers/user_providers.dart';
 import '../../../core/services/cloudinary_upload_service.dart';
 import '../../../core/widgets/app_logo.dart';
@@ -25,6 +27,7 @@ class _SeekerProfilePageState extends ConsumerState<SeekerProfilePage> {
   final _experienceYears = TextEditingController();
   final _skills = TextEditingController();
   final _expectedSalary = TextEditingController();
+  final _minSalaryController = TextEditingController();
   // Preferences
   final Set<String> _preferredCategories = {};
   final List<String> _preferredCities = [];
@@ -32,6 +35,7 @@ class _SeekerProfilePageState extends ConsumerState<SeekerProfilePage> {
   String? _cvUrl;
   String? _photoUrl;
   bool _saving = false;
+  bool _initialized = false;
 
   @override
   void dispose() {
@@ -44,6 +48,7 @@ class _SeekerProfilePageState extends ConsumerState<SeekerProfilePage> {
     _experienceYears.dispose();
     _skills.dispose();
     _expectedSalary.dispose();
+    _minSalaryController.dispose();
     super.dispose();
   }
 
@@ -66,15 +71,15 @@ class _SeekerProfilePageState extends ConsumerState<SeekerProfilePage> {
       body: userAsync.when(
         data: (u) {
           // Initialize fields once
-          if (u != null) {
-            _name.text = u.name ?? _name.text;
+          if (u != null && !_initialized) {
+            _name.text = u.name;
             _phone.text = u.phone ?? _phone.text;
             _cnic.text = u.cnic ?? _cnic.text;
             _city.text = u.city ?? _city.text;
             _country.text = u.country ?? _country.text;
             _address.text = u.address ?? _address.text;
             _experienceYears.text = (u.experienceYears ?? 0).toString();
-            _skills.text = (u.skills ?? []).join(', ');
+            _skills.text = u.skills.join(', ');
             _expectedSalary.text = (u.expectedSalary ?? 0).toString();
             _cvUrl ??= u.cvUrl;
             _photoUrl ??= u.profilePhotoUrl;
@@ -85,6 +90,8 @@ class _SeekerProfilePageState extends ConsumerState<SeekerProfilePage> {
               ..clear()
               ..addAll(u.preferredCities);
             _minSalaryPref = (u.minSalaryPreferred ?? 0).toDouble();
+            _minSalaryController.text = _minSalaryPref.toInt().toString();
+            _initialized = true;
           }
 
           return Form(
@@ -190,28 +197,104 @@ class _SeekerProfilePageState extends ConsumerState<SeekerProfilePage> {
                   },
                 ),
                 const SizedBox(height: 12),
-                Text('Minimum Salary Preference'),
-                Slider(
-                  value: _minSalaryPref,
-                  min: 0,
-                  max: 500000,
-                  divisions: 100,
-                  label: _minSalaryPref.round().toString(),
-                  onChanged: (v) => setState(() => _minSalaryPref = v),
+                Text('Minimum Salary Preference (PKR)'),
+                TextFormField(
+                  controller: _minSalaryController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  decoration: const InputDecoration(
+                    hintText: 'Enter minimum salary',
+                    prefixText: 'Rs. ',
+                    border: OutlineInputBorder(),
+                    suffixText: 'PKR',
+                  ),
+                  onChanged: (value) {
+                    final salary = double.tryParse(value) ?? 0;
+                    setState(() {
+                      _minSalaryPref = salary;
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                          _cvUrl == null ? 'No CV uploaded' : 'CV attached'),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _cvUrl == null
+                          ? Theme.of(context).colorScheme.outline
+                          : Theme.of(context).colorScheme.primary,
                     ),
-                    TextButton.icon(
-                      onPressed: _uploadCV,
-                      icon: const Icon(Icons.upload_file),
-                      label: Text(_cvUrl == null ? 'Upload CV' : 'Replace CV'),
-                    ),
-                  ],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _cvUrl == null
+                                ? Icons.description_outlined
+                                : Icons.description,
+                            color: _cvUrl == null
+                                ? Theme.of(context).colorScheme.outline
+                                : Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _cvUrl == null ? 'No CV uploaded' : 'CV attached',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: _cvUrl == null
+                                        ? Theme.of(context).colorScheme.outline
+                                        : Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_cvUrl != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Your CV is ready for job applications',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          if (_cvUrl != null) ...[
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => _viewCV(),
+                                icon: const Icon(Icons.visibility),
+                                label: const Text('View CV'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _uploadCV,
+                              icon: const Icon(Icons.upload_file),
+                              label: Text(
+                                  _cvUrl == null ? 'Upload CV' : 'Replace CV'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 FilledButton(
@@ -231,28 +314,92 @@ class _SeekerProfilePageState extends ConsumerState<SeekerProfilePage> {
   }
 
   Future<void> _uploadPhoto() async {
-    final picked = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (picked == null) return;
-    final file = File(picked.files.single.path!);
-    final res = await CloudinaryUploadService.uploadProfileImage(
-      file: file,
-      customPublicId:
-          'jobhunt-dev/profile/${FirebaseAuth.instance.currentUser!.uid}',
-    );
-    setState(() => _photoUrl = res.secureUrl);
+    try {
+      final picked = await FilePicker.platform.pickFiles(type: FileType.image);
+      if (picked == null || picked.files.single.path == null) return;
+      final file = File(picked.files.single.path!);
+
+      // Show loading state
+      setState(() => _saving = true);
+
+      final res = await CloudinaryUploadService.uploadProfileImage(
+        file: file,
+        customPublicId: 'profile_${FirebaseAuth.instance.currentUser!.uid}',
+        onProgress: (p) {},
+      );
+
+      if (mounted) {
+        setState(() {
+          _photoUrl = res.secureUrl;
+          _saving = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile photo updated')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Photo upload failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _viewCV() async {
+    if (_cvUrl == null) return;
+
+    try {
+      // Navigate to PDF viewer page
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => PDFViewerPage(
+              pdfUrl: _cvUrl!,
+              title: 'My CV',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open CV: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _uploadCV() async {
-    final picked = await FilePicker.platform.pickFiles(
-        type: FileType.custom, allowedExtensions: ['pdf', 'doc', 'docx']);
-    if (picked == null) return;
-    final file = File(picked.files.single.path!);
-    final res = await CloudinaryUploadService.uploadCV(
-      file: file,
-      customPublicId:
-          'jobhunt-dev/profile/${FirebaseAuth.instance.currentUser!.uid}/cv',
-    );
-    setState(() => _cvUrl = res.secureUrl);
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+          type: FileType.custom, allowedExtensions: ['pdf', 'doc', 'docx']);
+      if (picked == null || picked.files.single.path == null) return;
+      final file = File(picked.files.single.path!);
+
+      // Show loading state
+      setState(() => _saving = true);
+
+      final res = await CloudinaryUploadService.uploadCV(
+        file: file,
+        customPublicId: 'cv_${FirebaseAuth.instance.currentUser!.uid}',
+        onProgress: (p) {},
+      );
+
+      if (mounted) {
+        setState(() {
+          _cvUrl = res.secureUrl;
+          _saving = false;
+        });
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('CV updated')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('CV upload failed: $e')));
+      }
+    }
   }
 
   Future<void> _save(String uid) async {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/pin_providers.dart';
 import '../../../core/providers/auth_providers.dart';
 import '../../../core/widgets/app_logo.dart';
+import '../../../core/utils/back_button_handler.dart';
 
 class PinVerificationScreen extends ConsumerStatefulWidget {
   final String? nextRoute;
@@ -42,18 +43,14 @@ class _PinVerificationScreenState extends ConsumerState<PinVerificationScreen> {
     final pinState = ref.watch(pinProvider);
     final theme = Theme.of(context);
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (didPop) return;
-        _showExitConfirmation(context);
-      },
+    return BackButtonHandler.createPopScope(
+      context: context,
       child: Scaffold(
         appBar: BrandedAppBar(
           title: 'Enter PIN',
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => _showExitConfirmation(context),
+            onPressed: () => context.pop(),
           ),
           elevation: 0,
           actions: [
@@ -344,35 +341,6 @@ class _PinVerificationScreenState extends ConsumerState<PinVerificationScreen> {
             },
           ),
         ),
-      ),
-    ); // End PopScope
-  }
-
-  void _showExitConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Exit App?'),
-        content: const Text(
-          'You need to enter your PIN to access your account. '
-          'Do you want to sign out instead?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await ref.read(authNotifierProvider.notifier).signOut();
-              if (context.mounted) {
-                context.go('/auth');
-              }
-            },
-            child: const Text('Sign Out'),
-          ),
-        ],
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/localization_providers.dart';
 import '../../../core/services/localization_service.dart';
 import '../../../core/widgets/app_logo.dart';
+import '../../../core/utils/back_button_handler.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -13,46 +14,43 @@ class SettingsPage extends ConsumerWidget {
     final localizationService = ref.watch(localizationServiceProvider);
     final accessibilityService = ref.watch(accessibilityServiceProvider);
 
-    return Scaffold(
-      appBar: BrandedAppBar(
-        title: 'Settings',
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/seeker/profile');
-            }
-          },
-          tooltip: 'Back',
+    return BackButtonHandler.createPopScope(
+      context: context,
+      child: Scaffold(
+        appBar: BrandedAppBar(
+          title: 'Settings',
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+            tooltip: 'Back',
+          ),
         ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Language Section
-          _buildSectionHeader(context, 'Language'),
-          _buildLanguageSelector(context, ref, localizationService),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Language Section
+            _buildSectionHeader(context, 'Language'),
+            _buildLanguageSelector(context, ref, localizationService),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Accessibility Section
-          _buildSectionHeader(context, 'Accessibility'),
-          _buildAccessibilitySettings(context, ref, accessibilityService),
+            // Accessibility Section
+            _buildSectionHeader(context, 'Accessibility'),
+            _buildAccessibilitySettings(context, ref, accessibilityService),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Notifications Section
-          _buildSectionHeader(context, 'Notifications'),
-          _buildNotificationSettings(context),
+            // Notifications Section
+            _buildSectionHeader(context, 'Notifications'),
+            _buildNotificationSettings(context),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // About Section
-          _buildSectionHeader(context, 'About'),
-          _buildAboutSection(context),
-        ],
+            // About Section
+            _buildSectionHeader(context, 'About'),
+            _buildAboutSection(context),
+          ],
+        ),
       ),
     );
   }

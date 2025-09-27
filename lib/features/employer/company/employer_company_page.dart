@@ -118,10 +118,11 @@ class _EmployerCompanyPageState extends ConsumerState<EmployerCompanyPage> {
     final file = File(picked.files.single.path!);
     final res = await CloudinaryUploadService.uploadCompanyLogo(
       file: file,
-      customPublicId:
-          'jobhunt-dev/company_logos/${FirebaseAuth.instance.currentUser!.uid}',
+      customPublicId: 'company_logo_${FirebaseAuth.instance.currentUser!.uid}',
     );
     setState(() => _logoUrl = res.secureUrl);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Company logo updated')));
   }
 
   Future<void> _save(String uid) async {
