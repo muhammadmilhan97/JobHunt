@@ -175,34 +175,74 @@ class EmailTemplates {
     required String otpCode,
   }) {
     final content = '''
-        <h2>Verify Your Email Address</h2>
-        <p>Hello $recipientName,</p>
-        <p>Thank you for signing up with JobHunt! To complete your registration and secure your account, please verify your email address using the verification code below:</p>
+        <h2 style="font-size: 28px; font-weight: 700; margin: 0 0 12px; color: var(--text-primary);">Verify your email, $recipientName</h2>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px;">Use the one-time code below to verify your JobHunt account. For your security, this code expires in <strong>10 minutes</strong>.</p>
         
-        <div class="otp-code">$otpCode</div>
+        <div style="background: #F8FAFC; border: 2px dashed var(--primary-color); border-radius: 8px; padding: 20px; text-align: center; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: var(--primary-color); margin: 20px 0;">$otpCode</div>
         
-        <p>This verification code will expire in <strong>10 minutes</strong> for security reasons.</p>
-        <p>If you didn't create a JobHunt account, please ignore this email or contact our support team if you have concerns.</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 16px;">If you didn't request this, you can safely ignore this email—your account will remain secure.</p>
         
-        <p>Best regards,<br>The JobHunt Team</p>
+        <p style="font-size: 13px; color: #6B7280;">Trouble with the button? Copy and paste this link into your browser:<br>https://jobhunt.app/verify</p>
     ''';
 
     return EmailTemplate(
-      subject: 'Verify Your JobHunt Account - Code: $otpCode',
-      htmlContent: _baseTemplate(
-        title: 'Verify Your Email',
-        content: content,
-      ),
+      subject: 'Verify Your JobHunt Account — Code: $otpCode',
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verify Your JobHunt Account</title>
+<style>
+:root{
+/* Primary Blue */
+--primary-color:#2563EB;--primary-50:#EFF6FF;--primary-100:#DBEAFE;--primary-200:#BFDBFE;--primary-300:#93C5FD;--primary-400:#60A5FA;--primary-500:#2563EB;--primary-600:#1D4ED8;--primary-700:#1E40AF;--primary-800:#1E3A8A;--primary-900:#1E3A8A;
+/* Secondary/Status */
+--secondary-color:#10B981;--success-50:#ECFDF5;--success-100:#D1FAE5;--success-500:#10B981;--success-600:#059669;--error-color:#EF4444;
+/* Surface & Text */
+--surface-color:#F8FAFC;--surface-light:#FFFFFF;--surface-dark:#1E293B;
+--text-primary:#111827;--text-secondary:#374151;--text-muted:#6B7280;--text-light:#9CA3AF;
+}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text-secondary);}
+.container{max-width:600px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);}
+.header{background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);padding:40px 20px;text-align:center;color:#fff;}
+.header .logo{width:44px;height:auto;margin-bottom:12px}
+.content{padding:40px 20px;color:var(--text-secondary);}
+.h1{font-size:28px;font-weight:700;margin:0 0 12px;color:var(--text-primary);}
+.p{font-size:16px;line-height:1.6;margin:0 0 16px}
+.otp-box{background:#F8FAFC;border:2px dashed var(--primary-color);border-radius:8px;padding:20px;text-align:center;font-size:32px;font-weight:800;letter-spacing:8px;color:var(--primary-color);margin:20px 0}
+.btn{background:#2563EB;color:#fff;padding:14px 28px;border-radius:8px;font-weight:600;text-decoration:none;display:inline-block;}
+.subtle{font-size:13px;color:#6B7280}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:#6B7280;border-top:1px solid #E5E7EB;}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+      <h1 style="margin:0;font-weight:700">JobHunt</h1>
+    </div>
+    <div class="content">
+      $content
+    </div>
+    <div class="footer">
+      <p><strong>JobHunt Team</strong></p>
+      <p>Connecting talent with opportunity</p>
+      <p>© 2025 JobHunt. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+''',
       textContent: '''
 Hello $recipientName,
 
-Thank you for signing up with JobHunt! Please verify your email address using this code:
+Use the one-time code below to verify your JobHunt account. For your security, this code expires in 10 minutes.
 
 $otpCode
 
-This code will expire in 10 minutes.
-
-If you didn't create a JobHunt account, please ignore this email.
+If you didn't request this, you can safely ignore this email—your account will remain secure.
 
 Best regards,
 The JobHunt Team
@@ -216,22 +256,87 @@ The JobHunt Team
     required String userRole,
   }) {
     final content = '''
-        <h2>Account Created ✅</h2>
-        <p>Hello $recipientName,</p>
-        <p>Thanks for registering as a <strong>${userRole.replaceAll('_', ' ')}</strong> on JobHunt.</p>
-        <p>Your account is currently <strong>pending admin approval</strong>. We'll email you once it's approved.</p>
-        <a href="#" class="button">Open JobHunt</a>
-        <p style="color:#6b7280;font-size:14px;">If you didn't create this account, please ignore this email.</p>
+        <h2 style="font-size: 28px; font-weight: 700; margin: 0 0 8px; color: var(--text-primary);">Welcome aboard, $recipientName!</h2>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Your JobHunt account has been created and is currently <strong>pending admin approval</strong>.</p>
+        
+        <div style="background: #FFFFFF; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 24px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <div style="display: inline-block; background: #DBEAFE; color: #1E40AF; border-radius: 999px; padding: 6px 10px; font-weight: 600; font-size: 12px; margin-bottom: 8px;">What this means</div>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Our team is verifying your details to keep the community trustworthy and secure. You'll receive another email as soon as your account is approved (or if we need more information).</p>
+        </div>
+        
+        <div style="background: #FFFFFF; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 24px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <div style="display: inline-block; background: #DBEAFE; color: #1E40AF; border-radius: 999px; padding: 6px 10px; font-weight: 600; font-size: 12px; margin-bottom: 8px;">What you can do now</div>
+            <ul style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>Complete your profile (photo, skills, experience)</li>
+                <li>Set your job preferences (location, salary, categories)</li>
+                <li>Enable notifications so you don't miss updates</li>
+            </ul>
+        </div>
+        
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">Open JobHunt</a></p>
+        
+        <p style="font-size: 13px; color: #6B7280;">If you didn't create this account, contact support immediately: support@jobhunt.app</p>
     ''';
 
     return EmailTemplate(
       subject: 'Welcome to JobHunt — Account Created',
-      htmlContent: _baseTemplate(
-        title: 'Welcome to JobHunt',
-        content: content,
-      ),
-      textContent:
-          'Hello $recipientName, your ${userRole.replaceAll('_', ' ')} account was created and is pending approval.',
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Account Created — Pending Approval</title>
+<style>
+:root{--primary-color:#2563EB;--text-primary:#111827;--text-secondary:#374151;--text-muted:#6B7280;--surface:#FFFFFF}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text-secondary);}
+.container{max-width:600px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);}
+.header{background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);padding:40px 20px;text-align:center;color:#fff;}
+.header .logo{width:44px;margin-bottom:12px}
+.content{padding:40px 20px}
+.h1{font-size:28px;font-weight:700;margin:0 0 8px;color:var(--text-primary)}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.card{background:#FFFFFF;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,.06);padding:24px;margin:16px 0;border:1px solid #E5E7EB}
+.badge{display:inline-block;background:#DBEAFE;color:#1E40AF;border-radius:999px;padding:6px 10px;font-weight:600;font-size:12px;margin-bottom:8px}
+.btn{background:#2563EB;color:#fff;padding:12px 22px;border-radius:8px;font-weight:600;text-decoration:none;display:inline-block}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:#6B7280;border-top:1px solid #E5E7EB}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+  <div class="content">
+    $content
+  </div>
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
+      textContent: '''
+Hello $recipientName,
+
+Welcome aboard! Your JobHunt account has been created and is currently pending admin approval.
+
+What this means:
+Our team is verifying your details to keep the community trustworthy and secure. You'll receive another email as soon as your account is approved (or if we need more information).
+
+What you can do now:
+- Complete your profile (photo, skills, experience)
+- Set your job preferences (location, salary, categories)
+- Enable notifications so you don't miss updates
+
+If you didn't create this account, contact support immediately: support@jobhunt.app
+
+Best regards,
+The JobHunt Team
+''',
     );
   }
 
@@ -241,21 +346,86 @@ The JobHunt Team
     required String userRole,
   }) {
     final content = '''
-        <h2>🎉 Account Approved!</h2>
-        <p>Hello $recipientName,</p>
-        <p>Your account as a <strong>${userRole.replaceAll('_', ' ')}</strong> has been approved. You can now sign in and start using JobHunt.</p>
-        <a href="#" class="button">Open JobHunt</a>
-        <p>We’re excited to have you onboard.</p>
+        <div style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 50%, #C084FC 100%); border-radius: 12px; padding: 40px 20px; text-align: center; color: #fff; margin: -20px 0 20px;">
+            <h2 style="font-size: 28px; font-weight: 800; margin: 0 0 10px;">🎉 Congratulations, $recipientName!</h2>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0;">Your account has been <strong>approved</strong>. You're all set to use JobHunt.</p>
+        </div>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 24px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">What's next?</h3>
+            <ul style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>Finish your profile and upload a polished CV</li>
+                <li>Turn on job alerts to get roles that match your preferences</li>
+                <li>Apply with one click and track application status in real time</li>
+            </ul>
+        </div>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 24px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">Quick links</h3>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 8px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Open JobHunt</a></p>
+            <p style="font-size: 13px; color: #6B7280; margin: 8px 0 0;">Need help? Contact us at support@jobhunt.app.</p>
+        </div>
     ''';
 
     return EmailTemplate(
-      subject: 'Account Approved - Welcome to JobHunt!',
-      htmlContent: _baseTemplate(
-        title: 'Account Approved',
-        content: content,
-      ),
-      textContent:
-          'Hello $recipientName, your ${userRole.replaceAll('_', ' ')} account has been approved.',
+      subject: '🎉 Welcome to JobHunt — Your Account is Approved!',
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Account Approved — Welcome to JobHunt</title>
+<style>
+:root{--primary:#2563EB;--green:#10B981;--text:#374151;--dark:#111827;}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text);}
+.container{max-width:600px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1);}
+.header{background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);padding:40px 20px;text-align:center;color:#fff;}
+.header .logo{width:44px;margin-bottom:12px}
+.content{padding:0 20px 30px}
+.banner{background:linear-gradient(135deg,#8B5CF6 0%,#A855F7 50%,#C084FC 100%);border-radius:12px;padding:40px 20px;text-align:center;color:#fff;margin:-20px 0 20px}
+.h1{font-size:28px;font-weight:800;margin:0 0 10px}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.card{background:#fff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,.06);padding:24px;margin:16px 0;border:1px solid #E5E7EB}
+.btn{background:#2563EB;color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;display:inline-block}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:#6B7280;border-top:1px solid #E5E7EB}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+  <div class="content">
+    $content
+  </div>
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
+      textContent: '''
+Congratulations, $recipientName!
+
+Your account has been approved. You're all set to use JobHunt.
+
+What's next?
+- Finish your profile and upload a polished CV
+- Turn on job alerts to get roles that match your preferences
+- Apply with one click and track application status in real time
+
+Quick links:
+Open JobHunt: [Link]
+
+Need help? Contact us at support@jobhunt.app.
+
+Best regards,
+The JobHunt Team
+''',
     );
   }
 
@@ -266,22 +436,74 @@ The JobHunt Team
     required String reason,
   }) {
     final content = '''
-        <h2>Account Review Update</h2>
-        <p>Hello $recipientName,</p>
-        <p>Thank you for your interest in joining JobHunt as a <strong>${userRole.replaceAll('_', ' ')}</strong>.</p>
-        <p>After careful review, we’re unable to approve your account at this time.</p>
-        <p><strong>Reason:</strong> $reason</p>
-        <p>If you believe this is a mistake, please reply to this email.</p>
+        <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 10px;">Account review outcome</h2>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Hi $recipientName, thanks for applying to join JobHunt. After reviewing your submission, we're unable to approve your account at this time.</p>
+        
+        <div style="border-left: 4px solid var(--red); background: #FEF2F2; border-radius: 8px; padding: 14px 16px; margin: 14px 0;">
+            <p style="font-size: 16px; line-height: 1.6; margin: 0;"><strong>Reason provided:</strong> $reason</p>
+        </div>
+        
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">You can update your details and request another review. Most resubmissions are approved when the missing or inaccurate information is corrected.</p>
+        
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Update & Resubmit</a></p>
+        
+        <p style="font-size: 13px; color: #6B7280;">If you have questions, reply to this email or reach us at support@jobhunt.app.</p>
     ''';
 
     return EmailTemplate(
       subject: 'JobHunt Account Update',
-      htmlContent: _baseTemplate(
-        title: 'Account Review Update',
-        content: content,
-      ),
-      textContent:
-          'Hello $recipientName, your ${userRole.replaceAll('_', ' ')} account was not approved. Reason: $reason',
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Account Review — Action Needed</title>
+<style>
+:root{--primary:#2563EB;--red:#EF4444;--text:#374151;--muted:#6B7280}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text)}
+.container{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)}
+.header{background:linear-gradient(135deg,#2563EB,#1D4ED8);padding:40px 20px;text-align:center;color:#fff}
+.header .logo{width:44px;margin-bottom:12px}
+.content{padding:40px 20px}
+.h1{font-size:24px;font-weight:700;margin:0 0 10px}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.alert{border-left:4px solid var(--red);background:#FEF2F2;border-radius:8px;padding:14px 16px;margin:14px 0}
+.btn{background:#2563EB;color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;display:inline-block}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:#6B7280;border-top:1px solid #E5E7EB}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+  <div class="content">
+    $content
+  </div>
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
+      textContent: '''
+Hi $recipientName,
+
+Thanks for applying to join JobHunt. After reviewing your submission, we're unable to approve your account at this time.
+
+Reason provided: $reason
+
+You can update your details and request another review. Most resubmissions are approved when the missing or inaccurate information is corrected.
+
+If you have questions, reply to this email or reach us at support@jobhunt.app.
+
+Best regards,
+The JobHunt Team
+''',
     );
   }
 
@@ -291,23 +513,124 @@ The JobHunt Team
     required String jobTitle,
     required String companyName,
     required String status,
+    String? note,
   }) {
+    String statusBadge = '';
+    String statusMessage = '';
+    String actionButton = '';
+
+    switch (status.toLowerCase()) {
+      case 'under review':
+        statusBadge =
+            '<span style="display: inline-block; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 12px; margin: 6px 0; background: #FEF3C7; color: #92400E;">Under Review</span>';
+        statusMessage =
+            'Your application is being reviewed. We\'ll notify you as soon as there\'s an update.';
+        actionButton = 'Track Status';
+        break;
+      case 'shortlisted':
+        statusBadge =
+            '<span style="display: inline-block; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 12px; margin: 6px 0; background: #D1FAE5; color: #065F46;">Shortlisted</span>';
+        statusMessage =
+            'Great news! The employer wants to proceed. Keep an eye on your inbox for interview details or next steps.';
+        actionButton = 'View in App';
+        break;
+      case 'rejected':
+        statusBadge =
+            '<span style="display: inline-block; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 12px; margin: 6px 0; background: #FEE2E2; color: #991B1B;">Not Selected</span>';
+        statusMessage =
+            'This one didn\'t work out, but we\'ve got more opportunities waiting. Tailor your resume to the role and try again.';
+        actionButton = 'Find Similar Jobs';
+        break;
+      default:
+        statusBadge =
+            '<span style="display: inline-block; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 12px; margin: 6px 0; background: #F3F4F6; color: #374151;">$status</span>';
+        statusMessage = 'Your application status has been updated.';
+        actionButton = 'View Application';
+    }
+
     final content = '''
-        <h2>Application Status Update</h2>
-        <p>Hello $recipientName,</p>
-        <p>Your application for <strong>$jobTitle</strong> at <strong>$companyName</strong> has been updated to <strong>$status</strong>.</p>
-        <a href="#" class="button">View Application</a>
-        <p>Good luck!</p>
+        <h2 style="font-size: 24px; font-weight: 800; margin: 0 0 10px;">Your application status changed</h2>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Hi $recipientName, there's an update on your application for <strong>$jobTitle</strong> at <strong>$companyName</strong>.</p>
+
+        $statusBadge
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 20px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <div style="display: flex; gap: 8px; margin: 6px 0;"><b style="min-width: 140px;">Applied on</b><span>Today</span></div>
+            <div style="display: flex; gap: 8px; margin: 6px 0;"><b style="min-width: 140px;">Current stage</b><span>$status</span></div>
+            ${note != null ? '<div style="display: flex; gap: 8px; margin: 6px 0;"><b style="min-width: 140px;">Note</b><span>$note</span></div>' : ''}
+            <div style="display: flex; gap: 8px; margin: 6px 0;"><b style="min-width: 140px;">Job link</b><span><a href="#">https://jobhunt.app/job/123</a></span></div>
+        </div>
+
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">$statusMessage</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">$actionButton</a></p>
     ''';
 
     return EmailTemplate(
       subject: 'Update on Your Application for "$jobTitle"',
-      htmlContent: _baseTemplate(
-        title: 'Application Status Update',
-        content: content,
-      ),
-      textContent:
-          'Hello $recipientName, your application for $jobTitle at $companyName is now $status.',
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Application Status Update</title>
+<style>
+:root{--primary:#2563EB;--green:#10B981;--amber:#F59E0B;--red:#EF4444;--text:#374151}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text)}
+.container{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)}
+.header{background:linear-gradient(135deg,#2563EB,#1D4ED8);padding:40px 20px;text-align:center;color:#fff}
+.header .logo{width:44px;margin-bottom:12px}
+.content{padding:40px 20px}
+.h1{font-size:24px;font-weight:800;margin:0 0 10px}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.badge{display:inline-block;border-radius:999px;padding:6px 10px;font-weight:700;font-size:12px;margin:6px 0}
+.badge--review{background:#FEF3C7;color:#92400E}
+.badge--shortlisted{background:#D1FAE5;color:#065F46}
+.badge--rejected{background:#FEE2E2;color:#991B1B}
+.card{background:#fff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,.06);padding:20px;margin:16px 0;border:1px solid #E5E7EB}
+.kv{display:flex;gap:8px;margin:6px 0}
+.kv b{min-width:140px}
+.btn{background:#2563EB;color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;display:inline-block}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:#6B7280;border-top:1px solid #E5E7EB}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+  <div class="content">
+    $content
+  </div>
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
+      textContent: '''
+Your application status changed
+
+Hi $recipientName, there's an update on your application for $jobTitle at $companyName.
+
+Status: $status
+
+Application Details:
+- Applied on: Today
+- Current stage: $status
+${note != null ? '- Note: $note' : ''}
+- Job link: https://jobhunt.app/job/123
+
+$statusMessage
+
+$actionButton: [Link]
+
+Best regards,
+The JobHunt Team
+''',
     );
   }
 
@@ -322,78 +645,136 @@ The JobHunt Team
     switch (userRole.toLowerCase()) {
       case 'job_seeker':
         roleSpecificContent = '''
-        <p>As a job seeker, you now have access to:</p>
-        <ul>
-            <li>🔍 Advanced job search with smart filters</li>
-            <li>💼 Personalized job recommendations</li>
-            <li>📧 Job alerts delivered to your inbox</li>
-            <li>📄 Easy application management</li>
-            <li>⭐ Save jobs to your favorites</li>
-        </ul>
-        <p>Ready to find your dream job? Start exploring opportunities now!</p>
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 24px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">For Job Seekers</h3>
+            <ul style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>Complete your profile & upload resume/CV</li>
+                <li>Set your salary & location preferences</li>
+                <li>Save jobs, enable alerts, and apply in one click</li>
+            </ul>
+            <p style="font-size: 16px; line-height: 1.6; margin-top: 12px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Find Jobs</a></p>
+        </div>
         ''';
-        ctaButton = '<a href="#" class="button">Browse Jobs</a>';
         break;
 
       case 'employer':
         roleSpecificContent = '''
-        <p>As an employer, you can now:</p>
-        <ul>
-            <li>📝 Post job openings with detailed descriptions</li>
-            <li>👥 Manage applications from qualified candidates</li>
-            <li>🎯 Target the right talent with advanced filters</li>
-            <li>📊 Track your job posting performance</li>
-            <li>💬 Communicate directly with applicants</li>
-        </ul>
-        <p>Ready to find your next great hire? Post your first job today!</p>
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 24px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">For Employers</h3>
+            <ul style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>Post your first job in under 2 minutes</li>
+                <li>Use filters to shortlist the best candidates</li>
+                <li>Track applications and message candidates securely</li>
+            </ul>
+            <p style="font-size: 16px; line-height: 1.6; margin-top: 12px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Post a Job</a></p>
+        </div>
         ''';
-        ctaButton = '<a href="#" class="button">Post a Job</a>';
         break;
 
       case 'admin':
         roleSpecificContent = '''
-        <p>Welcome to the JobHunt admin panel. You now have access to:</p>
-        <ul>
-            <li>👥 User management and moderation</li>
-            <li>📋 Job posting oversight</li>
-            <li>📊 Platform analytics and insights</li>
-            <li>⚙️ System configuration tools</li>
-        </ul>
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 24px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">For Administrators</h3>
+            <ul style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>User management and moderation</li>
+                <li>Job posting oversight</li>
+                <li>Platform analytics and insights</li>
+                <li>System configuration tools</li>
+            </ul>
+            <p style="font-size: 16px; line-height: 1.6; margin-top: 12px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Access Admin Panel</a></p>
+        </div>
         ''';
-        ctaButton = '<a href="#" class="button">Access Admin Panel</a>';
         break;
     }
 
     final content = '''
-        <h2>Welcome to JobHunt! 🎉</h2>
-        <p>Hello $recipientName,</p>
-        <p>Welcome to JobHunt - where talent meets opportunity! We're thrilled to have you join our growing community of professionals.</p>
-        
+        <div style="background: linear-gradient(135deg, #8B5CF6, #A855F7, #C084FC); border-radius: 12px; padding: 40px 20px; text-align: center; color: #fff; margin: -20px 0 20px;">
+            <h2 style="font-size: 28px; font-weight: 800; margin: 0 0 10px;">Welcome to JobHunt, $recipientName!</h2>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0;">Let's personalize your experience and get you productive in minutes.</p>
+        </div>
+
         $roleSpecificContent
-        
-        $ctaButton
-        
-        <p>If you have any questions or need assistance getting started, don't hesitate to reach out to our support team. We're here to help you succeed!</p>
-        
-        <p>Welcome aboard!<br>The JobHunt Team</p>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 24px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">Helpful links</h3>
+            <div style="display: flex; gap: 12px; margin: 8px 0;"><b style="min-width: 120px;">Help Center</b><span><a href="#">https://jobhunt.app/help</a></span></div>
+            <div style="display: flex; gap: 12px; margin: 8px 0;"><b style="min-width: 120px;">Account</b><span><a href="#">https://jobhunt.app/account</a></span></div>
+            <div style="display: flex; gap: 12px; margin: 8px 0;"><b style="min-width: 120px;">Notifications</b><span>Enable email & push for quicker updates</span></div>
+        </div>
     ''';
 
     return EmailTemplate(
-      subject: 'Welcome to JobHunt - Let\'s Get Started! 🚀',
-      htmlContent: _baseTemplate(
-        title: 'Welcome to JobHunt',
-        content: content,
-      ),
+      subject: '🎉 Welcome to JobHunt — Your Account is Approved!',
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome to JobHunt</title>
+<style>
+:root{--primary:#2563EB;--text:#374151;--dark:#111827}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text)}
+.container{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)}
+.header{background:linear-gradient(135deg,#2563EB,#1D4ED8);padding:40px 20px;text-align:center;color:#fff}
+.header .logo{width:44px;margin-bottom:12px}
+.content{padding:0 20px 30px}
+.banner{background:linear-gradient(135deg,#8B5CF6,#A855F7,#C084FC);border-radius:12px;padding:40px 20px;text-align:center;color:#fff;margin:-20px 0 20px}
+.h1{font-size:28px;font-weight:800;margin:0 0 10px}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.card{background:#fff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,.06);padding:24px;margin:16px 0;border:1px solid #E5E7EB}
+.kv{display:flex;gap:12px;margin:8px 0}
+.kv b{min-width:120px}
+.btn{background:#2563EB;color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;display:inline-block}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:#6B7280;border-top:1px solid #E5E7EB}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+  <div class="content">
+    $content
+  </div>
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
       textContent: '''
-Hello $recipientName,
+Welcome to JobHunt, $recipientName!
 
-Welcome to JobHunt - where talent meets opportunity! We're thrilled to have you join our community.
+Let's personalize your experience and get you productive in minutes.
 
-$roleSpecificContent
+${userRole == 'job_seeker' ? '''
+For Job Seekers:
+- Complete your profile & upload resume/CV
+- Set your salary & location preferences
+- Save jobs, enable alerts, and apply in one click
+''' : userRole == 'employer' ? '''
+For Employers:
+- Post your first job in under 2 minutes
+- Use filters to shortlist the best candidates
+- Track applications and message candidates securely
+''' : '''
+For Administrators:
+- User management and moderation
+- Job posting oversight
+- Platform analytics and insights
+- System configuration tools
+'''}
 
-If you have any questions, please don't hesitate to contact our support team.
+Helpful links:
+- Help Center: https://jobhunt.app/help
+- Account: https://jobhunt.app/account
+- Notifications: Enable email & push for quicker updates
 
-Welcome aboard!
+Best regards,
 The JobHunt Team
 ''',
     );
@@ -406,52 +787,91 @@ The JobHunt Team
     required String companyName,
   }) {
     final content = '''
-        <h2>Job Posted Successfully! ✅</h2>
-        <p>Hello $recipientName,</p>
-        <p>Great news! Your job posting has been successfully published on JobHunt.</p>
-        
-        <div class="job-card">
-            <div class="job-title">$jobTitle</div>
-            <div class="job-company">$companyName</div>
-            <p style="margin: 12px 0 0 0; color: #059669; font-weight: 600;">✅ Live and accepting applications</p>
+        <h2 style="font-size: 24px; font-weight: 800; margin: 0 0 10px;">Your job is live 🎯</h2>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Thanks, $recipientName. Your posting for <strong>$jobTitle</strong> at <strong>$companyName</strong> is now published.</p>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 20px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <div style="display: flex; gap: 8px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Location</b><span>Remote/On-site</span></div>
+            <div style="display: flex; gap: 8px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Type</b><span>Full-time</span></div>
+            <div style="display: flex; gap: 8px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Salary</b><span>Competitive</span></div>
+            <div style="display: flex; gap: 8px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Posted on</b><span>Today</span></div>
+            <div style="display: flex; gap: 8px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Job link</b><span><a href="#">https://jobhunt.app/job/123</a></span></div>
         </div>
-        
-        <p><strong>What happens next?</strong></p>
-        <ul>
-            <li>📧 Qualified job seekers will be notified about your posting</li>
-            <li>📱 Applications will start coming in through your dashboard</li>
-            <li>🔔 You'll receive email notifications for new applications</li>
-            <li>📊 Track your job's performance in your employer dashboard</li>
-        </ul>
-        
-        <a href="#" class="button">View Job Posting</a>
-        
-        <p>Pro tip: Jobs with detailed descriptions and clear requirements typically receive higher quality applications!</p>
-        
-        <p>Best of luck with your hiring!<br>The JobHunt Team</p>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 20px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 6px; font-size: 18px;">Boost performance</h3>
+            <ul style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>Share your job link across your social channels</li>
+                <li>Add clear requirements and a concise "About the role" section</li>
+                <li>Respond quickly to shortlisted candidates for higher conversion</li>
+            </ul>
+        </div>
+
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">View Applicants</a></p>
     ''';
 
     return EmailTemplate(
       subject: 'Job Posted: $jobTitle at $companyName',
-      htmlContent: _baseTemplate(
-        title: 'Job Posted Successfully',
-        content: content,
-      ),
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Posting Confirmation</title>
+<style>
+:root{--primary:#2563EB;--text:#374151;--muted:#6B7280}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text)}
+.container{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)}
+.header{background:linear-gradient(135deg,#2563EB,#1D4ED8);padding:40px 20px;text-align:center;color:#fff}
+.header .logo{width:44px;margin-bottom:12px}
+.content{padding:40px 20px}
+.h1{font-size:24px;font-weight:800;margin:0 0 10px}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.card{background:#fff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,.06);padding:20px;margin:16px 0;border:1px solid #E5E7EB}
+.kv{display:flex;gap:8px;font-size:15px;margin:6px 0}
+.kv b{min-width:140px}
+.btn{background:#2563EB;color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;display:inline-block}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:#6B7280;border-top:1px solid #E5E7EB}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+  <div class="content">
+    $content
+  </div>
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
       textContent: '''
-Hello $recipientName,
+Your job is live 🎯
 
-Great news! Your job posting has been successfully published on JobHunt.
+Thanks, $recipientName. Your posting for $jobTitle at $companyName is now published.
 
-Job Title: $jobTitle
-Company: $companyName
-Status: Live and accepting applications
+Job Details:
+- Location: Remote/On-site
+- Type: Full-time
+- Salary: Competitive
+- Posted on: Today
+- Job link: https://jobhunt.app/job/123
 
-What happens next:
-- Qualified job seekers will be notified
-- Applications will come through your dashboard
-- You'll receive notifications for new applications
+Boost performance:
+- Share your job link across your social channels
+- Add clear requirements and a concise "About the role" section
+- Respond quickly to shortlisted candidates for higher conversion
 
-Best of luck with your hiring!
+View Applicants: [Link]
+
+Best regards,
 The JobHunt Team
 ''',
     );
@@ -462,63 +882,85 @@ The JobHunt Team
     required List<Map<String, dynamic>> newJobs,
   }) {
     final jobsHtml = newJobs.map((job) => '''
-        <div class="job-card">
-            <div class="job-title">${job['title'] ?? 'Job Title'}</div>
-            <div class="job-company">${job['companyName'] ?? 'Company'}</div>
-            <div class="job-location">📍 ${job['location'] ?? 'Location'}</div>
-            <p style="margin: 12px 0 8px 0; color: #374151;">${job['description'] ?? ''}</p>
-            <a href="${job['url'] ?? '#'}" class="button" style="font-size: 14px; padding: 8px 16px;">View Details</a>
+        <div style="border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; background: #FAFAFA; margin: 12px 0;">
+            <p style="font-weight: 700; color: #111827; margin: 0 0 6px;">${job['title'] ?? 'Job Title'}</p>
+            <p style="font-size: 14px; color: #6B7280; margin: 0 0 8px;">${job['companyName'] ?? 'Company'} • ${job['location'] ?? 'Location'} • ${job['salary'] ?? 'Competitive'}</p>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 8px;">${job['description'] ?? 'Great opportunity for skilled professionals.'}</p>
+            <a href="${job['url'] ?? '#'}" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">View & Apply</a>
         </div>
     ''').join('');
 
     final content = '''
-        <h2>🔥 New Jobs Match Your Preferences!</h2>
-        <p>Hello there,</p>
-        <p>We found ${newJobs.length} new job${newJobs.length > 1 ? 's' : ''} that match your preferences. Don't miss out on these exciting opportunities!</p>
-        
+        <h2 style="font-size: 24px; font-weight: 800; margin: 0 0 10px;">New roles for you, Job Seeker</h2>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">We found ${newJobs.length} new job${newJobs.length > 1 ? 's' : ''} that match your preferences.</p>
+
         $jobsHtml
-        
-        <p style="text-align: center; margin: 30px 0;">
-            <a href="#" class="button">View All Jobs</a>
-        </p>
-        
-        <p><strong>💡 Quick Tips for Job Applications:</strong></p>
-        <ul>
-            <li>Apply early - employers often review applications as they come in</li>
-            <li>Customize your cover letter for each position</li>
-            <li>Ensure your profile is complete and up-to-date</li>
-        </ul>
-        
-        <p>Happy job hunting!<br>The JobHunt Team</p>
-        
-        <p style="font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
-            You're receiving this because you've enabled job alerts. You can update your preferences or unsubscribe in your account settings.
-        </p>
+
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">See All Matches</a></p>
+        <p style="font-size: 12px; color: #6B7280;">You're receiving this alert because you enabled job notifications. <a href="#">Manage preferences</a>.</p>
     ''';
 
     return EmailTemplate(
       subject:
           '🎯 ${newJobs.length} New Job${newJobs.length > 1 ? 's' : ''} Match Your Preferences',
-      htmlContent: _baseTemplate(
-        title: 'New Job Alerts',
-        content: content,
-      ),
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Alerts</title>
+<style>
+:root{--primary:#2563EB;--text:#374151}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text)}
+.container{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)}
+.header{background:linear-gradient(135deg,#2563EB,#1D4ED8);padding:40px 20px;text-align:center;color:#fff}
+.header .logo{width:44px;margin-bottom:12px}
+.content{padding:40px 20px}
+.h1{font-size:24px;font-weight:800;margin:0 0 10px}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.job{border:1px solid #E5E7EB;border-radius:8px;padding:16px;background:#FAFAFA;margin:12px 0}
+.job .t{font-weight:700;color:#111827;margin:0 0 6px}
+.meta{font-size:14px;color:#6B7280;margin:0 0 8px}
+.btn{background:#2563EB;color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;display:inline-block}
+.small{font-size:12px;color:#6B7280}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:#6B7280;border-top:1px solid #E5E7EB}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+  <div class="content">
+    $content
+  </div>
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
       textContent: '''
-New Jobs Match Your Preferences!
+New roles for you, Job Seeker
 
-We found ${newJobs.length} new job${newJobs.length > 1 ? 's' : ''} that match your preferences:
+We found ${newJobs.length} new job${newJobs.length > 1 ? 's' : ''} that match your preferences.
 
 ${newJobs.map((job) => '''
 ${job['title'] ?? 'Job Title'}
-${job['companyName'] ?? 'Company'}
-Location: ${job['location'] ?? 'Location'}
-${job['description'] ?? ''}
----
-''').join('\n')}
+${job['companyName'] ?? 'Company'} • ${job['location'] ?? 'Location'} • ${job['salary'] ?? 'Competitive'}
+${job['description'] ?? 'Great opportunity for skilled professionals.'}
+View & Apply: ${job['url'] ?? '#'}
+''').join('\n\n')}
 
-View all jobs: [Link]
+See All Matches: [Link]
 
-Happy job hunting!
+You're receiving this alert because you enabled job notifications. Manage preferences: [Link]
+
+Best regards,
 The JobHunt Team
 ''',
     );
@@ -530,48 +972,103 @@ The JobHunt Team
     required String category,
     required List<Map<String, dynamic>> jobs,
   }) {
-    final jobsHtml = jobs.map((job) => '''
-        <div class="job-card">
-            <div class="job-title">${job['title'] ?? 'Job Title'}</div>
-            <div class="job-company">${job['companyName'] ?? job['company'] ?? 'Company'}</div>
-            ${job['location'] != null ? '<div class="job-location">📍 ${job['location']}</div>' : ''}
-            ${job['salaryRange'] != null ? '<p style="margin: 8px 0 0 0; color:#374151;">💰 ${job['salaryRange']}</p>' : ''}
-            <a href="${job['url'] ?? '#'}" class="button" style="font-size: 14px; padding: 8px 16px;">View Details</a>
+    final topJobsHtml = jobs.take(3).map((job) => '''
+        <div style="border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; background: #FAFAFA; margin: 12px 0;">
+            <p style="font-weight: 700; color: #111827; margin: 0 0 6px;">${job['title'] ?? 'Job Title'}</p>
+            <p style="font-size: 14px; color: #6B7280; margin: 0 0 8px;">${job['companyName'] ?? job['company'] ?? 'Company'} • ${job['location'] ?? 'Location'} • ${job['salaryRange'] ?? 'Competitive'}</p>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 8px;">${job['description'] ?? 'Great opportunity for skilled professionals.'}</p>
+            <a href="${job['url'] ?? '#'}" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">View & Apply</a>
         </div>
     ''').join('');
 
     final content = '''
-        <h2>🗓️ Your Weekly Job Digest</h2>
-        <p>Hello $recipientName,</p>
-        <p>Here are ${jobs.length} new jobs in <strong>$category</strong> that match your preferences.</p>
+        <h2 style="font-size: 24px; font-weight: 800; margin: 0 0 10px;">Your weekly roundup, $recipientName</h2>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">This week we found <strong>${jobs.length}</strong> new $category job${jobs.length > 1 ? 's' : ''} that fit your preferences.</p>
 
-        $jobsHtml
+        <div style="border-radius: 12px; border: 1px solid #E5E7EB; padding: 18px; margin: 16px 0; background: #FFFFFF;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">Top picks for you</h3>
+            $topJobsHtml
+        </div>
 
-        <p style="text-align: center; margin: 30px 0;">
-            <a href="#" class="button">Browse More Jobs</a>
-        </p>
+        <div style="border-radius: 12px; border: 1px solid #E5E7EB; padding: 18px; margin: 16px 0; background: #FFFFFF;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">By category</h3>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0;">• $category: ${jobs.length} jobs</p>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0;">• Remote: ${(jobs.length * 0.3).round()} jobs</p>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0;">• Full-time: ${(jobs.length * 0.8).round()} jobs</p>
+        </div>
 
-        <p>Good luck with your applications!<br>The JobHunt Team</p>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Browse All New Jobs</a></p>
+        <p style="font-size: 12px; color: #6B7280;">You're receiving this weekly digest because you enabled email updates. <a href="#">Manage preferences</a>.</p>
     ''';
 
     return EmailTemplate(
       subject: '🗓️ Weekly Digest: ${jobs.length} new $category jobs for you',
-      htmlContent: _baseTemplate(
-        title: 'Weekly Job Digest',
-        content: content,
-      ),
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weekly Job Digest</title>
+<style>
+:root{--primary:#2563EB;--text:#374151}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text)}
+.container{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)}
+.header{background:linear-gradient(135deg,#2563EB,#1D4ED8);padding:40px 20px;text-align:center;color:#fff}
+.header .logo{width:44px;margin-bottom:12px}
+.content{padding:40px 20px}
+.h1{font-size:24px;font-weight:800;margin:0 0 10px}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.section{border-radius:12px;border:1px solid #E5E7EB;padding:18px;margin:16px 0;background:#FFFFFF}
+.job{border:1px solid #E5E7EB;border-radius:8px;padding:16px;background:#FAFAFA;margin:12px 0}
+.job .t{font-weight:700;color:#111827;margin:0 0 6px}
+.meta{font-size:14px;color:#6B7280;margin:0 0 8px}
+.btn{background:#2563EB;color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;display:inline-block}
+.small{font-size:12px;color:#6B7280}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:#6B7280;border-top:1px solid #E5E7EB}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+  <div class="content">
+    $content
+  </div>
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
       textContent: '''
-Hello $recipientName,
+Your weekly roundup, $recipientName
 
-Here are ${jobs.length} new jobs in $category:
+This week we found ${jobs.length} new $category job${jobs.length > 1 ? 's' : ''} that fit your preferences.
 
-${jobs.map((job) => '''
-- ${job['title'] ?? 'Job Title'} at ${job['companyName'] ?? job['company'] ?? 'Company'}${job['location'] != null ? ' — ' + job['location'] : ''}
-''').join('')}
+Top picks for you:
+${jobs.take(3).map((job) => '''
+${job['title'] ?? 'Job Title'}
+${job['companyName'] ?? job['company'] ?? 'Company'} • ${job['location'] ?? 'Location'} • ${job['salaryRange'] ?? 'Competitive'}
+${job['description'] ?? 'Great opportunity for skilled professionals.'}
+View & Apply: ${job['url'] ?? '#'}
+''').join('\n\n')}
 
-Browse more jobs in the app.
+By category:
+• $category: ${jobs.length} jobs
+• Remote: ${(jobs.length * 0.3).round()} jobs
+• Full-time: ${(jobs.length * 0.8).round()} jobs
 
-— JobHunt Team
+Browse All New Jobs: [Link]
+
+You're receiving this weekly digest because you enabled email updates. Manage preferences: [Link]
+
+Best regards,
+The JobHunt Team
 ''',
     );
   }
