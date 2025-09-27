@@ -1072,4 +1072,260 @@ The JobHunt Team
 ''',
     );
   }
+
+  /// Employer Account Created Email Template
+  static EmailTemplate employerAccountCreated({
+    required String recipientName,
+    required String companyName,
+    String? ticketId,
+  }) {
+    final content = '''
+        <h2 style="font-size: 28px; font-weight: 700; margin: 0 0 8px; color: #111827;">Thanks for joining, $recipientName!</h2>
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Your employer account for <strong>$companyName</strong> has been created and is currently <strong>pending admin approval</strong>.</p>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 20px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <div style="display: inline-block; background: #DBEAFE; color: #1E40AF; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 12px; margin-bottom: 8px;">What this means</div>
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 6px;">We review all employer accounts to keep JobHunt safe and trusted for candidates.</p>
+            <div style="display: flex; gap: 10px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Status</b><span>In review</span></div>
+            <div style="display: flex; gap: 10px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Submitted on</b><span>Today</span></div>
+            ${ticketId != null ? '<div style="display: flex; gap: 10px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Reference ID</b><span>$ticketId</span></div>' : ''}
+        </div>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 20px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <div style="display: inline-block; background: #DBEAFE; color: #1E40AF; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 12px; margin-bottom: 8px;">Speed up approval</div>
+            <ul style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>Ensure your <strong>company profile</strong> is complete (logo, website, about, address)</li>
+                <li>Use a <strong>work email domain</strong> (e.g., hr@yourcompany.com)</li>
+                <li>Upload any required <strong>verification documents</strong> (if requested)</li>
+            </ul>
+        </div>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 20px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <div style="display: inline-block; background: #DBEAFE; color: #1E40AF; border-radius: 999px; padding: 6px 10px; font-weight: 700; font-size: 12px; margin-bottom: 8px;">While you wait</div>
+            <ul style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>Draft your first job post (you can publish once approved)</li>
+                <li>Set up your <strong>hiring preferences</strong> and screening questions</li>
+                <li>Invite team members to collaborate on hiring</li>
+            </ul>
+        </div>
+
+        <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Open Employer Dashboard</a></p>
+        <p style="font-size: 13px; color: #6B7280;">Need help? Visit the <a href="#" style="color: #2563EB; text-decoration: none;">Help Center</a> or email us at support@jobhunt.app.</p>
+    ''';
+
+    return EmailTemplate(
+      subject:
+          'Welcome to JobHunt — Employer Account Created (Pending Approval)',
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Employer Account — Pending Approval</title>
+<style>
+:root{
+  --primary-color:#2563EB;--primary-600:#1D4ED8;
+  --surface:#FFFFFF;--bg:#F3F4F6;
+  --text:#374151;--text-dark:#111827;--muted:#6B7280;
+  --border:#E5E7EB;--success:#10B981;--error:#EF4444;
+}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text)}
+.container{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)}
+.header{background:linear-gradient(135deg,var(--primary-color) 0%,var(--primary-600) 100%);padding:40px 20px;text-align:center;color:#fff}
+.header .logo{width:44px;height:auto;margin-bottom:12px}
+.content{padding:40px 20px}
+.h1{font-size:28px;font-weight:700;margin:0 0 8px;color:var(--text-dark)}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.card{background:#fff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,.06);padding:20px;margin:16px 0;border:1px solid var(--border)}
+.badge{display:inline-block;background:#DBEAFE;color:#1E40AF;border-radius:999px;padding:6px 10px;font-weight:700;font-size:12px;margin-bottom:8px}
+.kv{display:flex;gap:10px;font-size:15px;margin:6px 0}
+.kv b{min-width:140px}
+.btn{background:var(--primary-color);color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;display:inline-block}
+.link{color:var(--primary-color);text-decoration:none}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:var(--muted);border-top:1px solid var(--border)}
+.small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+  <div class="content">
+    $content
+  </div>
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
+      textContent: '''
+Thanks for joining, $recipientName!
+
+Your employer account for $companyName has been created and is currently pending admin approval.
+
+What this means:
+We review all employer accounts to keep JobHunt safe and trusted for candidates.
+
+Account Details:
+- Status: In review
+- Submitted on: Today
+${ticketId != null ? '- Reference ID: $ticketId' : ''}
+
+Speed up approval:
+- Ensure your company profile is complete (logo, website, about, address)
+- Use a work email domain (e.g., hr@yourcompany.com)
+- Upload any required verification documents (if requested)
+
+While you wait:
+- Draft your first job post (you can publish once approved)
+- Set up your hiring preferences and screening questions
+- Invite team members to collaborate on hiring
+
+Open Employer Dashboard: [Link]
+
+Need help? Visit the Help Center or email us at support@jobhunt.app.
+
+Best regards,
+The JobHunt Team
+''',
+    );
+  }
+
+  /// Employer Welcome Email Template
+  static EmailTemplate employerWelcome({
+    required String recipientName,
+    required String companyName,
+    String? companyWebsite,
+  }) {
+    final content = '''
+        <div style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 50%, #C084FC 100%); border-radius: 12px; padding: 40px 20px; text-align: center; color: #fff; margin: -20px 0 20px;">
+            <h2 style="font-size: 28px; font-weight: 800; margin: 0 0 8px;">🎉 Congratulations, $recipientName!</h2>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0;">Your employer account for <strong>$companyName</strong> is approved and ready to hire.</p>
+        </div>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 20px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">Start hiring in minutes</h3>
+            <ol style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>Create your first job post (title, description, skills, salary, location)</li>
+                <li>Set screening questions and must-have criteria</li>
+                <li>Publish and share your job link to attract candidates fast</li>
+            </ol>
+            <p style="font-size: 16px; line-height: 1.6; margin-top: 10px;">
+                <a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 800; text-decoration: none; display: inline-block;">Post a Job</a>
+                &nbsp;&nbsp;<a href="#" style="background: transparent; color: #2563EB; border: 2px solid #2563EB; padding: 10px 18px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block;">Open Employer Dashboard</a>
+            </p>
+        </div>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 20px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">Best practices for great results</h3>
+            <ul style="font-size: 16px; line-height: 1.6; margin: 0; padding-left: 18px;">
+                <li>Write a clear, concise role summary with 5–7 key responsibilities</li>
+                <li>List 4–6 specific, measurable requirements (skills, years, tech)</li>
+                <li>Show a realistic salary range and perks to boost conversion</li>
+                <li>Respond to shortlisted candidates within 24–48 hours</li>
+            </ul>
+        </div>
+
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06); padding: 20px; margin: 16px 0; border: 1px solid #E5E7EB;">
+            <h3 style="margin: 0 0 8px; font-size: 18px;">Your account</h3>
+            <div style="display: flex; gap: 10px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Company</b><span>$companyName</span></div>
+            ${companyWebsite != null ? '<div style="display: flex; gap: 10px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Website</b><span><a href="$companyWebsite">$companyWebsite</a></span></div>' : ''}
+            <div style="display: flex; gap: 10px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Team members</b><span><a href="#">Invite collaborators</a></span></div>
+            <div style="display: flex; gap: 10px; font-size: 15px; margin: 6px 0;"><b style="min-width: 140px;">Billing & receipts</b><span><a href="#">Manage billing</a></span></div>
+        </div>
+
+        <p style="font-size: 13px; color: #6B7280;">Need help? Visit the <a href="#" style="color: #2563EB; text-decoration: none;">Help Center</a> or email us at support@jobhunt.app.</p>
+    ''';
+
+    return EmailTemplate(
+      subject: '🎉 Welcome to JobHunt — Employer Account Approved!',
+      htmlContent: '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Employer Welcome — Account Approved</title>
+<style>
+:root{
+  --primary:#2563EB;--primary-600:#1D4ED8;
+  --text:#374151;--dark:#111827;--muted:#6B7280;--border:#E5E7EB;
+}
+body{margin:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;color:var(--text)}
+.container{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.1)}
+.header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-600) 100%);padding:40px 20px;text-align:center;color:#fff}
+.header .logo{width:44px;height:auto;margin-bottom:12px}
+.content{padding:0 20px 30px}
+.banner{background:linear-gradient(135deg,#8B5CF6 0%,#A855F7 50%,#C084FC 100%);border-radius:12px;padding:40px 20px;text-align:center;color:#fff;margin:-20px 0 20px}
+.h1{font-size:28px;font-weight:800;margin:0 0 8px}
+.p{font-size:16px;line-height:1.6;margin:0 0 14px}
+.card{background:#fff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,.06);padding:20px;margin:16px 0;border:1px solid var(--border)}
+.list{padding-left:18px;margin:0}
+.btn{background:var(--primary);color:#fff;padding:12px 22px;border-radius:8px;font-weight:800;text-decoration:none;display:inline-block}
+.btn--ghost{background:transparent;color:var(--primary);border:2px solid var(--primary);padding:10px 18px;border-radius:8px;font-weight:700;text-decoration:none;display:inline-block}
+.kv{display:flex;gap:10px;font-size:15px;margin:6px 0}
+.kv b{min-width:140px}
+.footer{background:#F8FAFC;padding:30px 20px;text-align:center;color:var(--muted);border-top:1px solid var(--border)}
+.small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <img class="logo" src="$_logoUrl" alt="JobHunt Logo">
+    <h1 style="margin:0">JobHunt</h1>
+  </div>
+
+  <div class="content">
+    $content
+  </div>
+
+  <div class="footer">
+    <p><strong>JobHunt Team</strong></p>
+    <p>Connecting talent with opportunity</p>
+    <p>© 2025 JobHunt. All rights reserved.</p>
+  </div>
+</div>
+</body>
+</html>
+''',
+      textContent: '''
+🎉 Congratulations, $recipientName!
+
+Your employer account for $companyName is approved and ready to hire.
+
+Start hiring in minutes:
+1. Create your first job post (title, description, skills, salary, location)
+2. Set screening questions and must-have criteria
+3. Publish and share your job link to attract candidates fast
+
+Post a Job: [Link]
+Open Employer Dashboard: [Link]
+
+Best practices for great results:
+- Write a clear, concise role summary with 5–7 key responsibilities
+- List 4–6 specific, measurable requirements (skills, years, tech)
+- Show a realistic salary range and perks to boost conversion
+- Respond to shortlisted candidates within 24–48 hours
+
+Your account:
+- Company: $companyName
+${companyWebsite != null ? '- Website: $companyWebsite' : ''}
+- Team members: Invite collaborators [Link]
+- Billing & receipts: Manage billing [Link]
+
+Need help? Visit the Help Center or email us at support@jobhunt.app.
+
+Best regards,
+The JobHunt Team
+''',
+    );
+  }
 }
