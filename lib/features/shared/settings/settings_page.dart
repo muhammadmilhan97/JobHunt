@@ -5,6 +5,7 @@ import '../../../core/providers/localization_providers.dart';
 import '../../../core/services/localization_service.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/utils/back_button_handler.dart';
+import '../../../l10n/app_localizations.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -13,35 +14,36 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final localizationService = ref.watch(localizationServiceProvider);
     final accessibilityService = ref.watch(accessibilityServiceProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return BackButtonHandler.createPopScope(
       context: context,
       child: Scaffold(
         appBar: BrandedAppBar(
-          title: 'Settings',
+          title: l10n.settings,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => context.pop(),
-            tooltip: 'Back',
+            tooltip: l10n.back,
           ),
         ),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             // Language Section
-            _buildSectionHeader(context, 'Language'),
+            _buildSectionHeader(context, l10n.language),
             _buildLanguageSelector(context, ref, localizationService),
 
             const SizedBox(height: 24),
 
             // Accessibility Section
-            _buildSectionHeader(context, 'Accessibility'),
+            _buildSectionHeader(context, l10n.accessibility),
             _buildAccessibilitySettings(context, ref, accessibilityService),
 
             const SizedBox(height: 24),
 
             // Notifications Section
-            _buildSectionHeader(context, 'Notifications'),
+            _buildSectionHeader(context, l10n.notifications),
             _buildNotificationSettings(context),
 
             const SizedBox(height: 24),
@@ -86,8 +88,12 @@ class SettingsPage extends ConsumerWidget {
                 trailing: isSelected
                     ? const Icon(Icons.check, color: Colors.green)
                     : null,
-                onTap: () {
-                  localizationService.setLanguage(option['code']!);
+                onTap: () async {
+                  await localizationService.setLanguage(option['code']!);
+                  // Force rebuild to show updated selection
+                  if (context.mounted) {
+                    ref.invalidate(localizationServiceProvider);
+                  }
                 },
               );
             },
@@ -102,17 +108,23 @@ class SettingsPage extends ConsumerWidget {
     WidgetRef ref,
     dynamic accessibilityService,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Card(
       child: Column(
         children: [
           // High Contrast
           SwitchListTile(
-            title: const Text('High Contrast'),
+            title: Text(l10n.highContrast),
             subtitle:
                 const Text('Improve visibility with high contrast colors'),
             value: accessibilityService.highContrast,
-            onChanged: (value) {
-              accessibilityService.setHighContrast(value);
+            onChanged: (value) async {
+              await accessibilityService.setHighContrast(value);
+              // Force rebuild to apply theme changes
+              if (context.mounted) {
+                ref.invalidate(accessibilityServiceProvider);
+              }
             },
           ),
 
@@ -120,11 +132,15 @@ class SettingsPage extends ConsumerWidget {
 
           // Large Text
           SwitchListTile(
-            title: const Text('Large Text'),
+            title: Text(l10n.largeText),
             subtitle: const Text('Increase text size for better readability'),
             value: accessibilityService.largeText,
-            onChanged: (value) {
-              accessibilityService.setLargeText(value);
+            onChanged: (value) async {
+              await accessibilityService.setLargeText(value);
+              // Force rebuild to apply theme changes
+              if (context.mounted) {
+                ref.invalidate(accessibilityServiceProvider);
+              }
             },
           ),
 
@@ -132,11 +148,15 @@ class SettingsPage extends ConsumerWidget {
 
           // Reduce Motion
           SwitchListTile(
-            title: const Text('Reduce Motion'),
+            title: Text(l10n.reduceMotion),
             subtitle: const Text('Minimize animations and transitions'),
             value: accessibilityService.reduceMotion,
-            onChanged: (value) {
-              accessibilityService.setReduceMotion(value);
+            onChanged: (value) async {
+              await accessibilityService.setReduceMotion(value);
+              // Force rebuild to apply theme changes
+              if (context.mounted) {
+                ref.invalidate(accessibilityServiceProvider);
+              }
             },
           ),
         ],
@@ -162,25 +182,27 @@ class SettingsPage extends ConsumerWidget {
     return Card(
       child: Column(
         children: [
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('Version'),
-            subtitle: const Text('1.0.0'),
+          const ListTile(
+            leading: Icon(Icons.info_outline),
+            title: Text('Version'),
+            subtitle: Text('1.0.0'),
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.description_outlined),
             title: const Text('Privacy Policy'),
+            trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
-              // TODO: Navigate to privacy policy
+              context.push('/privacy-policy');
             },
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.description_outlined),
             title: const Text('Terms of Service'),
+            trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
-              // TODO: Navigate to terms of service
+              context.push('/terms-of-service');
             },
           ),
         ],

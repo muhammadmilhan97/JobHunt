@@ -162,14 +162,14 @@ class CloudinaryUploadService {
 
       // Track upload progress (approximation)
       if (onProgress != null) {
-        onProgress(0.5); // Assume 50% when request is sent
+        onProgress(0.3); // 30% when request is sent
       }
 
       // Get response
       final response = await http.Response.fromStream(streamedResponse);
 
       if (onProgress != null) {
-        onProgress(1.0); // Complete
+        onProgress(0.8); // 80% when response received
       }
 
       debugPrint('Cloudinary upload response status: ${response.statusCode}');
@@ -198,6 +198,12 @@ class CloudinaryUploadService {
 
       final responseData = jsonDecode(response.body);
       debugPrint('Upload successful: ${responseData['secure_url']}');
+
+      // Final progress update
+      if (onProgress != null) {
+        onProgress(1.0); // Complete
+      }
+
       return UploadResult.fromJson(responseData);
     } catch (e) {
       debugPrint('Error uploading file: $e');

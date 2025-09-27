@@ -30,6 +30,8 @@ import '../../features/employer/company/employer_company_page.dart';
 import '../../features/seeker/favorites/seeker_favorites_page.dart';
 import '../../features/shared/settings/settings_page.dart';
 import '../../features/shared/settings/email_preferences_page.dart';
+import '../../features/shared/legal/privacy_policy_page.dart';
+import '../../features/shared/legal/terms_of_service_page.dart';
 import '../services/firebase_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -240,6 +242,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/approvals',
         name: 'admin-approvals',
         builder: (context, state) => const UserApprovalPage(),
+      ),
+
+      // Legal Pages
+      GoRoute(
+        path: '/privacy-policy',
+        name: 'privacy-policy',
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+
+      GoRoute(
+        path: '/terms-of-service',
+        name: 'terms-of-service',
+        builder: (context, state) => const TermsOfServicePage(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

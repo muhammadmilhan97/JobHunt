@@ -6,7 +6,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../../core/providers/applications_providers.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/models/application.dart';
-import '../../../core/utils/currency.dart';
 
 class MyApplicationsPage extends ConsumerWidget {
   const MyApplicationsPage({super.key});
@@ -120,7 +119,7 @@ class _ApplicationCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          application.jobTitle ?? 'Application Details',
+                          application.jobTitle ?? 'Job Application',
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
@@ -175,7 +174,10 @@ class _ApplicationCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      CurrencyFormatter.formatPkr(application.expectedSalary!),
+                      'Rs. ${application.expectedSalary!.toString().replaceAllMapped(
+                            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                            (Match m) => '${m[1]},',
+                          )}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,

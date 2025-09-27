@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/cloudinary_upload_service.dart';
 import '../../../core/services/application_service.dart';
-import '../../../core/models/models.dart';
 
 class ApplyBottomSheet extends ConsumerStatefulWidget {
   final String jobId;
@@ -48,6 +47,8 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
     try {
       setState(() {
         _uploadError = null;
+        _isUploading = false;
+        _uploadProgress = 0.0;
       });
 
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -59,7 +60,30 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
 
-        // Validate file
+        // Enhanced file validation
+        if (!await file.exists()) {
+          setState(() {
+            _uploadError = 'Selected file does not exist.';
+          });
+          return;
+        }
+
+        final fileSize = await file.length();
+        if (fileSize == 0) {
+          setState(() {
+            _uploadError = 'Selected file is empty.';
+          });
+          return;
+        }
+
+        if (fileSize > 10 * 1024 * 1024) {
+          setState(() {
+            _uploadError =
+                'File size exceeds 10MB limit. Please select a smaller file.';
+          });
+          return;
+        }
+
         if (!CloudinaryUploadService.isValidCVFile(file)) {
           setState(() {
             _uploadError =
@@ -68,19 +92,11 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
           return;
         }
 
-        final fileSize = await file.length();
-        if (fileSize > 10 * 1024 * 1024) {
-          // 10MB
-          setState(() {
-            _uploadError = 'File size exceeds 10MB limit.';
-          });
-          return;
-        }
-
         setState(() {
           _selectedFile = file;
           _uploadCompleted = false;
           _uploadedCvUrl = null;
+          _uploadError = null;
         });
 
         // Start upload immediately after file selection
@@ -88,7 +104,7 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
       }
     } catch (e) {
       setState(() {
-        _uploadError = 'Error picking file: $e';
+        _uploadError = _getFriendlyErrorMessage('Error picking file: $e');
       });
     }
   }
@@ -103,26 +119,56 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
     });
 
     try {
+      // Validate file before upload
+      if (!await _selectedFile!.exists()) {
+        throw Exception('Selected file no longer exists');
+      }
+
+      final fileSize = await _selectedFile!.length();
+      if (fileSize == 0) {
+        throw Exception('Selected file is empty');
+      }
+
+      // Show initial progress
+      setState(() {
+        _uploadProgress = 0.1;
+      });
+
       final result = await CloudinaryUploadService.uploadCV(
         file: _selectedFile!,
         onProgress: (progress) {
-          setState(() {
-            _uploadProgress = progress;
-          });
+          if (mounted) {
+            setState(() {
+              _uploadProgress = progress;
+            });
+          }
         },
       );
+
+      // Validate upload result
+      if (result.secureUrl.isEmpty) {
+        throw Exception('Upload completed but no URL returned');
+      }
 
       setState(() {
         _uploadedCvUrl = result.secureUrl;
         _uploadCompleted = true;
         _isUploading = false;
+        _uploadProgress = 1.0;
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('CV uploaded successfully!'),
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                const Text('CV uploaded successfully!'),
+              ],
+            ),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -130,17 +176,45 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
       setState(() {
         _isUploading = false;
         _uploadProgress = 0.0;
-        _uploadError = 'Upload failed: $e';
+        _uploadError = _getFriendlyErrorMessage(e.toString());
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Upload failed: $e'),
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(
+                        'Upload failed: ${_getFriendlyErrorMessage(e.toString())}')),
+              ],
+            ),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _uploadFile,
+            ),
           ),
         );
       }
+    }
+  }
+
+  String _getFriendlyErrorMessage(String error) {
+    if (error.contains('network') || error.contains('connection')) {
+      return 'Network error. Please check your internet connection and try again.';
+    } else if (error.contains('size') || error.contains('10MB')) {
+      return 'File is too large. Please select a file smaller than 10MB.';
+    } else if (error.contains('type') || error.contains('format')) {
+      return 'Invalid file format. Please select a PDF, DOC, or DOCX file.';
+    } else if (error.contains('preset') || error.contains('configuration')) {
+      return 'Upload service temporarily unavailable. Please try again later.';
+    } else {
+      return 'Upload failed. Please try again.';
     }
   }
 
@@ -149,11 +223,18 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
       return;
     }
 
-    if (_uploadedCvUrl == null) {
+    if (_uploadedCvUrl == null || !_uploadCompleted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please upload your CV first'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.warning, color: Colors.white),
+              const SizedBox(width: 8),
+              const Text('Please upload your CV first'),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 3),
         ),
       );
       return;
@@ -168,7 +249,12 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
           ? int.tryParse(_expectedSalaryController.text.replaceAll(',', ''))
           : null;
 
-      final applicationId = await ApplicationService.createApplication(
+      // Validate CV URL before submission
+      if (_uploadedCvUrl!.isEmpty) {
+        throw Exception('CV upload URL is invalid');
+      }
+
+      await ApplicationService.createApplication(
         jobId: widget.jobId,
         employerId: widget.employerId,
         cvUrl: _uploadedCvUrl!,
@@ -181,9 +267,16 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Application submitted successfully!'),
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                const Text('Application submitted successfully!'),
+              ],
+            ),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -195,8 +288,22 @@ class _ApplyBottomSheetState extends ConsumerState<ApplyBottomSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to submit application: $e'),
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(_getFriendlyErrorMessage(
+                        'Failed to submit application: $e'))),
+              ],
+            ),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _submitApplication,
+            ),
           ),
         );
       }

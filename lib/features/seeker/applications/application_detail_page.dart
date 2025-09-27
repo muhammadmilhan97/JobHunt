@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import '../../../core/providers/applications_providers.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/models/application.dart';
@@ -29,13 +33,6 @@ class ApplicationDetailPage extends ConsumerWidget {
             onPressed: () => context.go('/seeker/applications'),
             tooltip: 'Back',
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.share),
-              onPressed: () => _shareApplication(context),
-              tooltip: 'Share',
-            ),
-          ],
         ),
         body: applicationAsync.when(
           data: (application) {
@@ -230,25 +227,87 @@ class ApplicationDetailPage extends ConsumerWidget {
     );
   }
 
-  void _shareApplication(BuildContext context) {
-    // TODO: Implement sharing functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Share functionality coming soon')),
-    );
-  }
-
   void _viewJob(BuildContext context, String jobId) {
-    // TODO: Navigate to job details
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Job details coming soon')),
-    );
+    // Navigate to job details page
+    context.go('/seeker/job/$jobId');
   }
 
-  void _downloadCV(BuildContext context, String cvUrl) {
-    // TODO: Implement CV download
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('CV download coming soon')),
-    );
+  Future<void> _downloadCV(BuildContext context, String cvUrl) async {
+    if (cvUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No CV available for download'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Download the file
+      final response = await http.get(Uri.parse(cvUrl));
+      if (response.statusCode == 200) {
+        // Get the downloads directory
+        final directory = await getDownloadsDirectory() ??
+            await getApplicationDocumentsDirectory();
+        final fileName = 'CV_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final file = File('${directory.path}/$fileName');
+
+        // Write the file
+        await file.writeAsBytes(response.bodyBytes);
+
+        // Close loading dialog
+        if (context.mounted) Navigator.of(context).pop();
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('CV downloaded to ${directory.path}'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Open',
+              onPressed: () => _openFile(file.path),
+            ),
+          ),
+        );
+      } else {
+        // Close loading dialog
+        if (context.mounted) Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to download CV'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (context.mounted) Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Download failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openFile(String filePath) async {
+    final uri = Uri.file(filePath);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
   }
 }
 

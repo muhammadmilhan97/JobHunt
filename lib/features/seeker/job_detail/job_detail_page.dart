@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/models/job.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../widgets/job_card.dart';
 import '../../../core/utils/currency.dart';
-import '../../../core/utils/back_button_handler.dart';
 import 'apply_bottom_sheet.dart' as new_apply;
 
 class JobDetailPage extends ConsumerStatefulWidget {
@@ -43,10 +43,32 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
   Widget build(BuildContext context) {
     final jobAsync = ref.watch(jobByIdProvider(widget.jobId));
 
-    return BackButtonHandler.createPopScope(
-      context: context,
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/seeker/home');
+          }
+        }
+      },
       child: Scaffold(
-        appBar: const BrandedAppBar(title: 'Job Details'),
+        appBar: BrandedAppBar(
+          title: 'Job Details',
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/seeker/home');
+              }
+            },
+            tooltip: 'Back',
+          ),
+        ),
         body: jobAsync.when(
           data: (job) {
             if (job == null) {

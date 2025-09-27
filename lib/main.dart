@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'firebase_options.dart';
 // import 'app/theme.dart';
 // import 'core/services/firebase_service.dart';
@@ -13,7 +13,6 @@ import 'core/services/firebase_push_service.dart';
 import 'core/services/error_reporter.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/email_service.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'core/providers/router_provider.dart';
 import 'core/providers/localization_providers.dart';
 import 'core/widgets/app_lifecycle_handler.dart';
@@ -62,7 +61,7 @@ class JobHuntApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    // final currentLocale = ref.watch(currentLocaleProvider);
+    final currentLocale = ref.watch(currentLocaleProvider);
     final accessibilityService = ref.watch(accessibilityServiceProvider);
 
     return MaterialApp.router(
@@ -72,28 +71,36 @@ class JobHuntApp extends ConsumerWidget {
       // Theme with accessibility settings
       theme: accessibilityService.applyAccessibilitySettings(
         ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2563EB)),
           useMaterial3: true,
+          brightness: Brightness.light,
         ),
       ),
 
-      // Localization configuration (temporarily commented out)
-      // localizationsDelegates: [
-      //   AppLocalizations.delegate,
-      //   GlobalMaterialLocalizations.delegate,
-      //   GlobalWidgetsLocalizations.delegate,
-      //   GlobalCupertinoLocalizations.delegate,
-      // ],
-      // supportedLocales: const [
-      //   Locale('en', 'US'),
-      //   Locale('ur', 'PK'),
-      // ],
-      // locale: currentLocale,
+      // Localization configuration
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('ur', 'PK'),
+      ],
+      locale: currentLocale,
 
       routerConfig: router,
-      builder: (context, child) => AppLifecycleHandler(
-        child: InAppNotificationBanner(child: child!),
-      ),
+      builder: (context, child) {
+        return Directionality(
+          textDirection: currentLocale?.languageCode == 'ur'
+              ? TextDirection.rtl
+              : TextDirection.ltr,
+          child: AppLifecycleHandler(
+            child: InAppNotificationBanner(child: child!),
+          ),
+        );
+      },
     );
   }
 }

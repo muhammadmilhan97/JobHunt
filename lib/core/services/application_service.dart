@@ -35,11 +35,28 @@ class ApplicationService {
         throw Exception('You have already applied to this job');
       }
 
+      // Validate CV URL
+      if (cvUrl.isEmpty) {
+        throw Exception('CV URL is required');
+      }
+
+      // Fetch job details to populate jobTitle and employerName
+      final jobDoc = await _firestore.collection('jobs').doc(jobId).get();
+      if (!jobDoc.exists) {
+        throw Exception('Job not found');
+      }
+
+      final jobData = jobDoc.data()!;
+      final jobTitle = jobData['title'] as String?;
+      final employerName = jobData['company'] as String?;
+
       // Create application document
       final applicationData = {
         'jobId': jobId,
         'employerId': employerId,
         'jobSeekerId': jobSeekerId,
+        'jobTitle': jobTitle,
+        'employerName': employerName,
         'cvUrl': cvUrl,
         'coverLetter': coverLetter,
         'expectedSalary': expectedSalary,

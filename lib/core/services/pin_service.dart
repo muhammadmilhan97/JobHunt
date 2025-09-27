@@ -14,26 +14,29 @@ class PinService {
   static const int _maxAttempts = 5;
 
   /// Check if PIN is set for current user
+  /// Single source of truth: Firestore users/{uid}.pinSet
   static Future<bool> isPinSet() async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) return false;
 
-      final prefs = await SharedPreferences.getInstance();
-      final userPinKey = '${_pinSetKey}_${currentUser.uid}';
-      final localSet = prefs.getBool(userPinKey);
-      if (localSet == true) return true;
-
-      // Fallback to Firestore flag
+      // Always check Firestore first (single source of truth)
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUser.uid)
           .get();
+
+      if (!doc.exists) return false;
+
       final fsSet = (doc.data()?['pinSet'] as bool?) ?? false;
+
+      // Sync local cache for performance (but don't rely on it for truth)
       if (fsSet) {
-        // sync local flag for faster subsequent checks
+        final prefs = await SharedPreferences.getInstance();
+        final userPinKey = '${_pinSetKey}_${currentUser.uid}';
         await prefs.setBool(userPinKey, true);
       }
+
       return fsSet;
     } catch (e) {
       ErrorReporter.reportError('Failed to check PIN status', e.toString());
@@ -42,6 +45,7 @@ class PinService {
   }
 
   /// Set PIN for current user
+  /// Atomic persistence: Firestore write + local cache + session verification
   static Future<bool> setPin(String pin) async {
     try {
       if (!_isValidPin(pin)) {
@@ -53,16 +57,9 @@ class PinService {
         throw Exception('User not authenticated');
       }
 
-      final prefs = await SharedPreferences.getInstance();
       final hashedPin = _hashPin(pin, currentUser.uid);
 
-      final userPinKey = '${_pinKey}_${currentUser.uid}';
-      final userPinSetKey = '${_pinSetKey}_${currentUser.uid}';
-
-      await prefs.setString(userPinKey, hashedPin);
-      await prefs.setBool(userPinSetKey, true);
-
-      // Persist in Firestore (flag + hashed pin)
+      // 1. First, persist to Firestore (single source of truth)
       await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUser.uid)
@@ -72,7 +69,18 @@ class PinService {
         'pinUpdatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      // Reset attempts when PIN is set
+      // 2. Then update local cache for performance
+      final prefs = await SharedPreferences.getInstance();
+      final userPinKey = '${_pinKey}_${currentUser.uid}';
+      final userPinSetKey = '${_pinSetKey}_${currentUser.uid}';
+
+      await prefs.setString(userPinKey, hashedPin);
+      await prefs.setBool(userPinSetKey, true);
+
+      // 3. Mark session as verified (user just set PIN, so they're verified)
+      await _setSessionVerified(true);
+
+      // 4. Reset attempts when PIN is set
       await _resetAttempts();
 
       return true;
@@ -83,6 +91,7 @@ class PinService {
   }
 
   /// Verify PIN for current user
+  /// Always check Firestore first, then mark session as verified
   static Future<bool> verifyPin(String pin) async {
     try {
       if (!_isValidPin(pin)) {
@@ -94,21 +103,16 @@ class PinService {
         throw Exception('User not authenticated');
       }
 
-      final prefs = await SharedPreferences.getInstance();
-      final userPinKey = '${_pinKey}_${currentUser.uid}';
-      String? storedHash = prefs.getString(userPinKey);
+      // Always check Firestore first (single source of truth)
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
 
-      if (storedHash == null) {
-        // Fallback to Firestore hash
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .get();
-        storedHash = doc.data()?['pinHash'] as String?;
-        if (storedHash == null) {
-          return false;
-        }
-      }
+      if (!doc.exists) return false;
+
+      final storedHash = doc.data()?['pinHash'] as String?;
+      if (storedHash == null) return false;
 
       final inputHash = _hashPin(pin, currentUser.uid);
       final isValid = storedHash == inputHash;
@@ -116,7 +120,10 @@ class PinService {
       if (isValid) {
         await _resetAttempts();
         await _setSessionVerified(true);
-        // Cache hash locally for next time if it came from Firestore
+
+        // Cache hash locally for performance
+        final prefs = await SharedPreferences.getInstance();
+        final userPinKey = '${_pinKey}_${currentUser.uid}';
         await prefs.setString(userPinKey, storedHash);
       } else {
         await _incrementAttempts();
@@ -210,10 +217,23 @@ class PinService {
       final userPinKey = '${_pinKey}_${currentUser.uid}';
       final userPinSetKey = '${_pinSetKey}_${currentUser.uid}';
       final userAttemptsKey = '${_pinAttemptsKey}_${currentUser.uid}';
-
-      await prefs.remove(userAttemptsKey);
       final userSessionKey = '${_pinSessionVerifiedKey}_${currentUser.uid}';
+
+      // Clear local storage
+      await prefs.remove(userPinKey);
+      await prefs.remove(userPinSetKey);
+      await prefs.remove(userAttemptsKey);
       await prefs.remove(userSessionKey);
+
+      // Clear Firestore PIN data
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .set({
+        'pinSet': false,
+        'pinHash': FieldValue.delete(),
+        'pinUpdatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (e) {
       ErrorReporter.reportError('Failed to clear PIN data', e.toString());
     }

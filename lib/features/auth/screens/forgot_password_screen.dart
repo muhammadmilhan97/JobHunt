@@ -94,10 +94,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final resetState = ref.watch(passwordResetProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reset Password'),
-        centerTitle: true,
-        elevation: 0,
+      appBar: BrandedAppBar(
+        title: 'Reset Password',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/auth'),
