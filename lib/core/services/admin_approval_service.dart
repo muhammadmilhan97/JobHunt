@@ -85,28 +85,13 @@ class AdminApprovalService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      // Send approval email
+      // Send single combined approval + welcome email (role-specific)
       await _sendApprovalEmail(
         email: userEmail,
         userName: userName,
         userRole: userRole,
         approverName: approverName,
       );
-
-      // Optionally send welcome email after approval (not at registration)
-      try {
-        if (EmailConfig.isConfigured && EmailConfig.enableWelcomeEmails) {
-          await EmailService.sendWelcomeEmail(
-            to: userEmail,
-            toName: userName,
-            userRole: userRole,
-          );
-        }
-      } catch (e) {
-        // Do not fail approval on email failure; just log
-        ErrorReporter.reportError(
-            'Failed to send welcome email after approval', e.toString());
-      }
 
       return Result.success(null);
     } catch (e) {

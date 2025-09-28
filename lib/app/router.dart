@@ -8,7 +8,10 @@ import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/seeker/home/seeker_home_page.dart';
 import '../features/seeker/job_detail/job_detail_page.dart';
 import '../features/employer/dashboard/employer_dashboard_page.dart';
+import '../features/employer/dashboard/employer_my_jobs_page.dart';
 import '../features/employer/post_job/post_job_page.dart';
+import '../features/employer/company/employer_company_page.dart';
+import '../features/employer/applicants/employer_applicants_page.dart';
 import '../features/admin/screens/admin_panel_screen.dart';
 import '../features/admin/screens/system_logs_page.dart';
 import '../features/admin/screens/admin_settings_page.dart';
@@ -75,6 +78,27 @@ final GoRouter appRouter = GoRouter(
       path: '/employer/post',
       name: 'post-job',
       builder: (context, state) => const PostJobPage(),
+    ),
+
+    GoRoute(
+      path: '/employer/my-jobs',
+      name: 'employer-my-jobs',
+      builder: (context, state) => const EmployerMyJobsPage(),
+    ),
+
+    GoRoute(
+      path: '/employer/company',
+      name: 'employer-company',
+      builder: (context, state) => const EmployerCompanyPage(),
+    ),
+
+    GoRoute(
+      path: '/employer/job/:jobId/applicants',
+      name: 'employer-applicants',
+      builder: (context, state) {
+        final jobId = state.pathParameters['jobId']!;
+        return EmployerApplicantsPage(jobId: jobId);
+      },
     ),
 
     // Admin Routes

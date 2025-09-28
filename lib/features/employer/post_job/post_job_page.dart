@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/providers/user_providers.dart';
 import '../../../core/models/models.dart';
 import '../../../widgets/tag_input.dart';
 import '../../../core/widgets/app_logo.dart';
@@ -734,10 +735,15 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
         throw Exception('User not authenticated');
       }
 
+      // Get company name from user profile
+      final userProfile =
+          await ref.read(userRepositoryProvider).getUserById(employerId);
+      final companyName = userProfile?.companyName ?? 'Company Name';
+
       final job = Job(
         id: widget.jobId ?? 'job_${DateTime.now().millisecondsSinceEpoch}',
         title: formState.title,
-        company: 'EXXSN LTD', // TODO: Get from user profile
+        company: companyName,
         category: formState.category,
         locationCity: formState.city,
         locationCountry: formState.country,

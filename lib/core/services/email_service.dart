@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../models/email_template.dart';
 import 'error_reporter.dart';
+import 'email_logging_service.dart';
 import '../config/email_config.dart';
 
 class EmailService {
@@ -24,7 +25,7 @@ class EmailService {
   /// Check if the service is properly initialized
   static bool get isInitialized => _isInitialized;
 
-  /// Send a single email
+  /// Send a single email with logging and retry
   static Future<bool> sendEmail({
     required String to,
     required String toName,
@@ -33,11 +34,21 @@ class EmailService {
     String? textContent,
     String? fromEmail,
     String? fromName,
+    String? emailType,
+    Map<String, dynamic>? metadata,
   }) async {
     if (!isInitialized) {
       ErrorReporter.reportError(
         'EmailService not initialized',
         'EmailService initialization error',
+      );
+      await EmailLoggingService.logEmailSend(
+        type: emailType ?? 'generic',
+        to: to,
+        templateId: 'unknown',
+        status: 'failed',
+        error: 'EmailService not initialized',
+        metadata: metadata,
       );
       return false;
     }
@@ -58,12 +69,33 @@ class EmailService {
       if (kDebugMode) {
         print('Email sent via Cloud Function to $to: ${result.data}');
       }
+
+      // Log successful email send
+      await EmailLoggingService.logEmailSend(
+        type: emailType ?? 'generic',
+        to: to,
+        templateId: subject,
+        status: 'sent',
+        metadata: metadata,
+      );
+
       return true;
     } catch (e) {
       ErrorReporter.reportError(
         'Email send failed',
         'Cloud Function email send failed: ${e.toString()}',
       );
+
+      // Log failed email send
+      await EmailLoggingService.logEmailSend(
+        type: emailType ?? 'generic',
+        to: to,
+        templateId: subject,
+        status: 'failed',
+        error: e.toString(),
+        metadata: metadata,
+      );
+
       return false;
     }
   }
@@ -165,10 +197,12 @@ class EmailService {
       subject: template.subject,
       htmlContent: template.htmlContent,
       textContent: template.textContent,
+      emailType: 'account_created',
+      metadata: {'userRole': userRole},
     );
   }
 
-  /// Send approval email
+  /// Send approval email (now includes welcome content for employers)
   static Future<bool> sendApprovalEmail({
     required String to,
     required String toName,
@@ -179,20 +213,15 @@ class EmailService {
       userRole: userRole,
     );
 
-    final sent = await sendEmail(
+    return await sendEmail(
       to: to,
       toName: toName,
       subject: template.subject,
       htmlContent: template.htmlContent,
       textContent: template.textContent,
+      emailType: 'approval',
+      metadata: {'userRole': userRole},
     );
-
-    // Also send welcome email after approval
-    if (sent) {
-      await sendWelcomeEmail(to: to, toName: toName, userRole: userRole);
-    }
-
-    return sent;
   }
 
   /// Send rejection email
@@ -217,6 +246,36 @@ class EmailService {
     );
   }
 
+  /// Send job posting confirmation email (Employer)
+  static Future<bool> sendJobPostingConfirmationEmail({
+    required String to,
+    required String toName,
+    required String jobTitle,
+    required String companyName,
+    required String jobId,
+  }) async {
+    final template = EmailTemplates.jobPostingConfirmation(
+      recipientName: toName,
+      jobTitle: jobTitle,
+      companyName: companyName,
+      jobId: jobId,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: template.subject,
+      htmlContent: template.htmlContent,
+      textContent: template.textContent,
+      emailType: 'job_posting_confirmation',
+      metadata: {
+        'jobTitle': jobTitle,
+        'companyName': companyName,
+        'jobId': jobId,
+      },
+    );
+  }
+
   /// Send application status email
   static Future<bool> sendApplicationStatusEmail({
     required String to,
@@ -230,28 +289,6 @@ class EmailService {
       jobTitle: jobTitle,
       companyName: companyName,
       status: status,
-    );
-
-    return await sendEmail(
-      to: to,
-      toName: toName,
-      subject: template.subject,
-      htmlContent: template.htmlContent,
-      textContent: template.textContent,
-    );
-  }
-
-  /// Send job posting confirmation email
-  static Future<bool> sendJobPostingConfirmation({
-    required String to,
-    required String toName,
-    required String jobTitle,
-    required String companyName,
-  }) async {
-    final template = EmailTemplates.jobPostingConfirmation(
-      recipientName: toName,
-      jobTitle: jobTitle,
-      companyName: companyName,
     );
 
     return await sendEmail(

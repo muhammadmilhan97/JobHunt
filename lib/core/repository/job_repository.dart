@@ -166,11 +166,12 @@ class JobRepository {
         final employer = await userRepo.getUserById(job.employerId);
 
         if (employer != null && employer.jobPostingNotifications) {
-          await EmailService.sendJobPostingConfirmation(
+          await EmailService.sendJobPostingConfirmationEmail(
             to: employer.email,
             toName: employer.name,
             jobTitle: job.title,
             companyName: job.company,
+            jobId: job.id,
           );
         }
       }

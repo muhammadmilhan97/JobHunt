@@ -6,56 +6,6 @@ class EmailNotifications {
   static const String _vercelBase =
       'https://jobhunt-email-j9a89tm1a-muhammad-milhans-projects.vercel.app';
 
-  static String _brandHtml({
-    required String title,
-    required String bodyHtml,
-    String? ctaText,
-    String? ctaUrl,
-  }) {
-    final button = (ctaText != null && ctaUrl != null)
-        ? '<a href="$ctaUrl" style="display:inline-block;padding:12px 20px;background:#2563EB;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600">$ctaText</a>'
-        : '';
-
-    return '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>$title</title>
-  <style>
-    body{margin:0;padding:0;background:#f6f7fb;font-family:Inter,Segoe UI,Arial,sans-serif;color:#111827}
-    .container{max-width:640px;margin:0 auto;padding:24px}
-    .card{background:#ffffff;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.06);overflow:hidden}
-    .header{background:linear-gradient(90deg,#2563EB,#4F46E5);padding:20px 24px;color:#ffffff}
-    .logo{display:flex;align-items:center;gap:12px;font-weight:800;font-size:18px}
-    .content{padding:24px}
-    h1{margin:0 0 8px 0;font-size:22px}
-    p{line-height:1.6;margin:0 0 14px 0;color:#374151}
-    .footer{padding:18px 24px;border-top:1px solid #E5E7EB;color:#6B7280;font-size:12px}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="card">
-      <div class="header">
-        <div class="logo">JobHunt</div>
-      </div>
-      <div class="content">
-        <h1>$title</h1>
-        $bodyHtml
-        $button
-      </div>
-      <div class="footer">
-        You are receiving this email from JobHunt. If this wasn’t you, please ignore.
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-''';
-  }
-
   static Future<void> _send({
     required String to,
     required String subject,
@@ -163,11 +113,13 @@ class EmailNotifications {
     required String name,
     required String jobTitle,
     required String company,
+    required String jobId,
   }) async {
     final template = EmailTemplates.jobPostingConfirmation(
       recipientName: name,
       jobTitle: jobTitle,
       companyName: company,
+      jobId: jobId,
     );
     final html = template.htmlContent;
     await _send(
