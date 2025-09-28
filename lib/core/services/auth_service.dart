@@ -150,8 +150,8 @@ class AuthService {
       // Clear analytics user properties before signing out
       await AnalyticsService.clearUserProperties();
 
-      // Clear PIN data
-      await PinService.clearPinData();
+      // Clear only session-verified flag, preserve server-side pinSet
+      await PinService.clearPinSession();
 
       await _auth.signOut();
     } catch (e) {
