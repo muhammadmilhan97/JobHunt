@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/providers/admin_approval_providers.dart';
-import '../../core/providers/auth_providers.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/services/email_notifications.dart';
 
@@ -38,7 +36,6 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
   @override
   Widget build(BuildContext context) {
     final approvalState = ref.watch(adminApprovalProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: BrandedAppBar(
@@ -159,7 +156,6 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
   }
 
   Widget _buildUserCard(Map<String, dynamic> user, {required bool isPending}) {
-    final theme = Theme.of(context);
     final approvalStatus = user['approvalStatus'] as String? ?? 'pending';
     final role = user['role'] as String? ?? 'job_seeker';
     final name = user['name'] as String? ?? 'Unknown User';
@@ -208,17 +204,18 @@ class _UserApprovalPageState extends ConsumerState<UserApprovalPage>
                     children: [
                       Text(
                         name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         email,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[600],
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
