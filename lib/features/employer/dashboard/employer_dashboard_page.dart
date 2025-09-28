@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/providers/user_providers.dart';
+import '../../../core/providers/applications_providers.dart';
 import '../../../core/models/models.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../analytics/employer_analytics_page.dart';
@@ -23,6 +24,9 @@ class EmployerDashboardPage extends ConsumerWidget {
     final jobsAsync = uid != null
         ? ref.watch(jobsByEmployerProvider(uid))
         : const AsyncValue<List<Job>>.data(const []);
+    final applicationsAsync = uid != null
+        ? ref.watch(applicationsForEmployerProvider(uid))
+        : const AsyncValue<List<Application>>.data(const []);
     final userProfileAsync = uid != null
         ? ref.watch(userStreamProvider(uid))
         : const AsyncValue.data(null);
@@ -102,7 +106,12 @@ class EmployerDashboardPage extends ConsumerWidget {
 
               // Metrics Section
               jobsAsync.when(
-                data: (jobs) => _buildMetricsSection(context, jobs),
+                data: (jobs) => applicationsAsync.when(
+                  data: (applications) =>
+                      _buildMetricsSection(context, jobs, applications),
+                  loading: () => _buildMetricsShimmer(),
+                  error: (_, __) => const SizedBox(),
+                ),
                 loading: () => _buildMetricsShimmer(),
                 error: (_, __) => const SizedBox(),
               ),
@@ -135,7 +144,13 @@ class EmployerDashboardPage extends ConsumerWidget {
                   for (var job in jobs) {
                     print('Job: ${job.title} - EmployerId: ${job.employerId}');
                   }
-                  return _buildJobsList(context, jobs);
+                  return applicationsAsync.when(
+                    data: (applications) =>
+                        _buildJobsList(context, jobs, applications),
+                    loading: () => _buildJobsShimmer(),
+                    error: (error, stack) =>
+                        _buildErrorState(context, error.toString()),
+                  );
                 },
                 loading: () => _buildJobsShimmer(),
                 error: (error, stack) {
@@ -229,15 +244,15 @@ class EmployerDashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildMetricsSection(BuildContext context, List<Job> jobs) {
-    // Calculate metrics from this employer's jobs
+  Widget _buildMetricsSection(
+      BuildContext context, List<Job> jobs, List<Application> applications) {
+    // Calculate real metrics from jobs and applications
     final activeJobs = jobs.where((job) => job.isActive).length;
-    final totalApplicants = jobs.fold<int>(
-        0, (sum, job) => sum + (job.id.hashCode % 50)); // Mock data
-    final interviewsScheduled = jobs.fold<int>(
-        0, (sum, job) => sum + (job.id.hashCode % 10)); // Mock data
-    final hires = jobs.fold<int>(
-        0, (sum, job) => sum + (job.id.hashCode % 5)); // Mock data
+    final totalApplicants = applications.length;
+    final pendingApplications =
+        applications.where((app) => app.status == 'pending').length;
+    final acceptedApplications =
+        applications.where((app) => app.status == 'accepted').length;
     final expiringJobs = jobs.where((job) {
       final daysSincePosted = DateTime.now().difference(job.createdAt).inDays;
       return daysSincePosted >= 25 &&
@@ -281,9 +296,9 @@ class EmployerDashboardPage extends ConsumerWidget {
           children: [
             Expanded(
               child: _MetricCard(
-                title: 'Interviews',
-                value: interviewsScheduled.toString(),
-                icon: Icons.calendar_today_outlined,
+                title: 'Pending',
+                value: pendingApplications.toString(),
+                icon: Icons.pending_outlined,
                 color: Colors.orange,
                 onTap: () => Navigator.push(
                   context,
@@ -296,8 +311,8 @@ class EmployerDashboardPage extends ConsumerWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _MetricCard(
-                title: 'Hires',
-                value: hires.toString(),
+                title: 'Accepted',
+                value: acceptedApplications.toString(),
                 icon: Icons.check_circle_outline,
                 color: Colors.purple,
                 onTap: () => Navigator.push(
@@ -376,7 +391,8 @@ class EmployerDashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildJobsList(BuildContext context, List<Job> jobs) {
+  Widget _buildJobsList(
+      BuildContext context, List<Job> jobs, List<Application> applications) {
     if (jobs.isEmpty) {
       return _buildEmptyState(context);
     }
@@ -385,7 +401,13 @@ class EmployerDashboardPage extends ConsumerWidget {
     final displayJobs = jobs.take(5).toList();
 
     return Column(
-      children: displayJobs.map((job) => _EmployerJobCard(job: job)).toList(),
+      children: displayJobs
+          .map((job) => _EmployerJobCard(
+                job: job,
+                applications:
+                    applications.where((app) => app.jobId == job.id).toList(),
+              ))
+          .toList(),
     );
   }
 
@@ -603,13 +625,15 @@ class _MetricCard extends StatelessWidget {
 
 class _EmployerJobCard extends StatelessWidget {
   final Job job;
+  final List<Application> applications;
 
-  const _EmployerJobCard({required this.job});
+  const _EmployerJobCard({required this.job, required this.applications});
 
   @override
   Widget build(BuildContext context) {
-    final applicantCount = job.id.hashCode % 50; // Mock data
-    final viewsCount = job.id.hashCode % 200; // Mock data
+    final applicantCount = applications.length; // Real data
+    final viewsCount =
+        job.id.hashCode % 200; // Mock data - views tracking not implemented yet
     final status = DateTime.now().difference(job.createdAt).inDays < 30
         ? 'Active'
         : 'Inactive';
@@ -735,11 +759,7 @@ class _EmployerJobCard extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Edit job feature coming soon!'),
-                        ),
-                      );
+                      context.push('/employer/post/${job.id}');
                     },
                     icon: const Icon(Icons.edit, size: 18),
                     label: const Text('Edit Job'),
