@@ -29,3 +29,9 @@ final applicationsForJobProvider =
   final applicationsRepository = ref.watch(applicationsRepositoryProvider);
   return applicationsRepository.streamForJob(jobId);
 });
+
+final applicationsForEmployerProvider =
+    StreamProvider.family<List<Application>, String>((ref, employerId) {
+  final applicationsRepository = ref.watch(applicationsRepositoryProvider);
+  return applicationsRepository.streamForEmployer(employerId);
+});

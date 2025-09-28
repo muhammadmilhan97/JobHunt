@@ -12,6 +12,10 @@ import '../features/employer/dashboard/employer_my_jobs_page.dart';
 import '../features/employer/post_job/post_job_page.dart';
 import '../features/employer/company/employer_company_page.dart';
 import '../features/employer/applicants/employer_applicants_page.dart';
+import '../features/employer/analytics/employer_analytics_page.dart';
+import '../features/employer/applicants/employer_all_applicants_page.dart';
+import '../features/employer/interviews/employer_interviews_page.dart';
+import '../features/employer/hires/employer_hires_page.dart';
 import '../features/admin/screens/admin_panel_screen.dart';
 import '../features/admin/screens/system_logs_page.dart';
 import '../features/admin/screens/admin_settings_page.dart';
@@ -99,6 +103,28 @@ final GoRouter appRouter = GoRouter(
         final jobId = state.pathParameters['jobId']!;
         return EmployerApplicantsPage(jobId: jobId);
       },
+    ),
+
+    // Additional Employer Routes
+    GoRoute(
+      path: '/employer/analytics',
+      name: 'employer-analytics',
+      builder: (context, state) => const EmployerAnalyticsPage(),
+    ),
+    GoRoute(
+      path: '/employer/applicants',
+      name: 'employer-all-applicants',
+      builder: (context, state) => const EmployerAllApplicantsPage(),
+    ),
+    GoRoute(
+      path: '/employer/interviews',
+      name: 'employer-interviews',
+      builder: (context, state) => const EmployerInterviewsPage(),
+    ),
+    GoRoute(
+      path: '/employer/hires',
+      name: 'employer-hires',
+      builder: (context, state) => const EmployerHiresPage(),
     ),
 
     // Admin Routes

@@ -49,6 +49,18 @@ class ApplicationsRepository {
     }
   }
 
+  /// Get all applications for an employer across all their jobs
+  Stream<List<Application>> streamForEmployer(String employerId) {
+    return _firestore
+        .collection('applications')
+        .where('employerId', isEqualTo: employerId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Application.fromFirestore(doc))
+            .toList());
+  }
+
   Future<void> updateStatus(String applicationId, String newStatus) async {
     try {
       await _firestore.collection('applications').doc(applicationId).update({

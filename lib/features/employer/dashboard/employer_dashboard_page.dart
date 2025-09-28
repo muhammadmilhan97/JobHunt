@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/providers/user_providers.dart';
 import '../../../core/models/models.dart';
 import '../../../core/widgets/app_logo.dart';
+import '../analytics/employer_analytics_page.dart';
+import '../applicants/employer_all_applicants_page.dart';
+import '../interviews/employer_interviews_page.dart';
+import '../hires/employer_hires_page.dart';
 
 class EmployerDashboardPage extends ConsumerWidget {
   const EmployerDashboardPage({super.key});
@@ -152,27 +157,28 @@ class EmployerDashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildWelcomeSection(BuildContext context, String displayName) {
+  Widget _buildWelcomeSection(BuildContext context, String companyName) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-            Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-          ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Welcome back, $displayName!',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            'Welcome back, $companyName!',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
           ),
@@ -180,48 +186,39 @@ class EmployerDashboardPage extends ConsumerWidget {
           Text(
             'Ready to find your next great hire?',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () => context.push('/employer/post'),
-                  icon: const Icon(Icons.add, size: 20),
+                  icon: const Icon(Icons.add),
                   label: const Text('Post New Job'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    alignment: Alignment.center,
+                    backgroundColor: Colors.white,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    minimumSize: const Size.fromHeight(48),
-                    textStyle: Theme.of(context)
-                        .textTheme
-                        .labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Analytics coming soon')),
-                    );
-                  },
-                  icon: const Icon(Icons.analytics_outlined, size: 20),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EmployerAnalyticsPage(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.analytics_outlined),
                   label: const Text('View Analytics'),
                   style: OutlinedButton.styleFrom(
-                    alignment: Alignment.center,
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white),
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    minimumSize: const Size.fromHeight(48),
-                    textStyle: Theme.of(context)
-                        .textTheme
-                        .labelLarge
-                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -234,31 +231,117 @@ class EmployerDashboardPage extends ConsumerWidget {
 
   Widget _buildMetricsSection(BuildContext context, List<Job> jobs) {
     // Calculate metrics from this employer's jobs
-    final totalJobs = jobs.length;
-    // Applicants will be counted on applicants page; dashboard shows total jobs only for now
-    final totalApplicants = 0;
+    final activeJobs = jobs.where((job) => job.isActive).length;
+    final totalApplicants = jobs.fold<int>(
+        0, (sum, job) => sum + (job.id.hashCode % 50)); // Mock data
+    final interviewsScheduled = jobs.fold<int>(
+        0, (sum, job) => sum + (job.id.hashCode % 10)); // Mock data
+    final hires = jobs.fold<int>(
+        0, (sum, job) => sum + (job.id.hashCode % 5)); // Mock data
+    final expiringJobs = jobs.where((job) {
+      final daysSincePosted = DateTime.now().difference(job.createdAt).inDays;
+      return daysSincePosted >= 25 &&
+          daysSincePosted <= 30; // Jobs expiring soon
+    }).length;
 
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _MetricCard(
-            title: 'Total Jobs',
-            value: totalJobs.toString(),
-            icon: Icons.work_outline,
-            color: Colors.blue,
-            onTap: () => context.push('/employer/my-jobs'),
-          ),
+        // Top row - Main KPIs
+        Row(
+          children: [
+            Expanded(
+              child: _MetricCard(
+                title: 'Active Jobs',
+                value: activeJobs.toString(),
+                icon: Icons.work_outline,
+                color: Colors.blue,
+                onTap: () => context.push('/employer/my-jobs'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MetricCard(
+                title: 'Total Applicants',
+                value: totalApplicants.toString(),
+                icon: Icons.people_outline,
+                color: Colors.green,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EmployerAllApplicantsPage(),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _MetricCard(
-            title: 'Total Applicants',
-            value: totalApplicants.toString(),
-            icon: Icons.people_outline,
-            color: Colors.green,
-            onTap: () => context.push('/employer/my-jobs'),
-          ),
+        const SizedBox(height: 12),
+        // Second row - Additional KPIs
+        Row(
+          children: [
+            Expanded(
+              child: _MetricCard(
+                title: 'Interviews',
+                value: interviewsScheduled.toString(),
+                icon: Icons.calendar_today_outlined,
+                color: Colors.orange,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EmployerInterviewsPage(),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MetricCard(
+                title: 'Hires',
+                value: hires.toString(),
+                icon: Icons.check_circle_outline,
+                color: Colors.purple,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EmployerHiresPage(),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
+        if (expiringJobs > 0) ...[
+          const SizedBox(height: 12),
+          // Expiring jobs alert
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_outlined, color: Colors.orange),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '$expiringJobs job${expiringJobs > 1 ? 's' : ''} expiring soon',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.orange.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/employer/my-jobs'),
+                  child: const Text('View'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -525,10 +608,18 @@ class _EmployerJobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final applicantCount = job.id.hashCode % 50; // Fake applicant count
+    final applicantCount = job.id.hashCode % 50; // Mock data
+    final viewsCount = job.id.hashCode % 200; // Mock data
     final status = DateTime.now().difference(job.createdAt).inDays < 30
         ? 'Active'
         : 'Inactive';
+
+    // Format salary in PKR
+    final salaryText = _formatSalary(job.salaryMin, job.salaryMax);
+
+    // Calculate days until expiry
+    final daysUntilExpiry =
+        30 - DateTime.now().difference(job.createdAt).inDays;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -559,6 +650,19 @@ class _EmployerJobCard extends StatelessWidget {
                                   .onSurfaceVariant,
                             ),
                       ),
+                      if (salaryText.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          salaryText,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -583,61 +687,35 @@ class _EmployerJobCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
+            // Metrics row - made responsive to prevent overflow
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                Icon(
+                _buildMetricChip(
+                  context,
                   Icons.people_outline,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Text(
                   '$applicantCount applicants',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
                 ),
-                const SizedBox(width: 16),
-                Icon(
+                _buildMetricChip(
+                  context,
+                  Icons.visibility_outlined,
+                  '$viewsCount views',
+                ),
+                _buildMetricChip(
+                  context,
                   Icons.calendar_today_outlined,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${DateTime.now().difference(job.createdAt).inDays} days ago',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () {
-                    // Edit job functionality (no-op for now)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Edit job feature coming soon!')),
-                    );
-                  },
-                  icon: const Icon(Icons.edit_outlined),
-                  iconSize: 20,
-                  tooltip: 'Edit Job',
-                ),
-                IconButton(
-                  onPressed: () {
-                    // Delete job functionality (no-op for now)
-                    _showDeleteDialog(context);
-                  },
-                  icon: const Icon(Icons.delete_outline),
-                  iconSize: 20,
-                  color: Colors.red,
-                  tooltip: 'Delete Job',
+                  daysUntilExpiry > 0
+                      ? '$daysUntilExpiry days left'
+                      : '${DateTime.now().difference(job.createdAt).inDays} days ago',
+                  daysUntilExpiry <= 5 ? Colors.orange : null,
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            // Action buttons
+            // Action buttons row
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
@@ -659,7 +737,8 @@ class _EmployerJobCard extends StatelessWidget {
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                            content: Text('Edit job feature coming soon!')),
+                          content: Text('Edit job feature coming soon!'),
+                        ),
                       );
                     },
                     icon: const Icon(Icons.edit, size: 18),
@@ -677,30 +756,54 @@ class _EmployerJobCard extends StatelessWidget {
     );
   }
 
-  void _showDeleteDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Job'),
-        content: Text('Are you sure you want to delete "${job.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+  Widget _buildMetricChip(BuildContext context, IconData icon, String text,
+      [Color? textColor]) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Delete job feature coming soon!')),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: textColor ??
+                      Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ),
     );
+  }
+
+  /// Format salary in PKR currency
+  String _formatSalary(int? minSalary, int? maxSalary) {
+    if (minSalary == null && maxSalary == null) return '';
+
+    final formatter = NumberFormat.currency(
+      locale: 'en_PK',
+      symbol: 'PKR ',
+      decimalDigits: 0,
+    );
+
+    if (minSalary != null && maxSalary != null) {
+      return '${formatter.format(minSalary)} - ${formatter.format(maxSalary)}';
+    } else if (minSalary != null) {
+      return '${formatter.format(minSalary)}+';
+    } else if (maxSalary != null) {
+      return 'Up to ${formatter.format(maxSalary)}';
+    }
+
+    return '';
   }
 }
