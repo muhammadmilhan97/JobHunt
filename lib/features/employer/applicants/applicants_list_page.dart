@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/models/models.dart';
-import '../../../core/providers/application_providers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/models/application.dart';
+import '../../../core/providers/applications_providers.dart';
 import '../../../core/providers/user_providers.dart';
-import '../../../core/services/application_service.dart';
+import '../../../core/services/analytics_service.dart';
+import '../../../core/services/email_service.dart';
+import '../../../core/widgets/app_logo.dart';
 
 class ApplicantsListPage extends ConsumerWidget {
   final String jobId;
@@ -18,419 +21,196 @@ class ApplicantsListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final applicationsAsync = ref.watch(jobApplicationsProvider(jobId));
+    final applicantsAsync = ref.watch(applicationsForJobProvider(jobId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Applicants'),
-            Text(
-              jobTitle,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-        elevation: 1,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+      appBar: BrandedAppBar(
+        title: 'Applicants - $jobTitle',
       ),
-      body: applicationsAsync.when(
+      body: applicantsAsync.when(
         data: (applications) {
           if (applications.isEmpty) {
             return _buildEmptyState(context);
           }
-          return _buildApplicationsList(context, ref, applications);
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+
+          // Sort applications by status priority and date
+          final sortedApplications = [...applications];
+          sortedApplications.sort((a, b) {
+            final statusPriority = {
+              'pending': 0,
+              'reviewing': 1,
+              'accepted': 2,
+              'rejected': 3
+            };
+            final aPriority = statusPriority[a.status] ?? 4;
+            final bPriority = statusPriority[b.status] ?? 4;
+
+            if (aPriority != bPriority) {
+              return aPriority.compareTo(bPriority);
+            }
+            return b.createdAt.compareTo(a.createdAt); // Newest first
+          });
+
+          return Column(
             children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load applicants',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
+              // Summary Header
+              _buildSummaryHeader(applications),
+              // Applications List
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: sortedApplications.length,
+                  itemBuilder: (context, index) {
+                    final application = sortedApplications[index];
+                    return _ApplicantCard(
+                      application: application,
+                      jobTitle: jobTitle,
+                      onStatusUpdate: (newStatus) => _updateApplicationStatus(
+                        context,
+                        ref,
+                        application,
+                        newStatus,
+                      ),
+                      onViewCV: () => _viewCV(context, application),
+                      onScheduleInterview: () =>
+                          _scheduleInterview(context, ref, application),
+                    );
+                  },
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.refresh(jobApplicationsProvider(jobId)),
-                child: const Text('Retry'),
               ),
             ],
-          ),
-        ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => _buildErrorState(context, error.toString()),
+      ),
+    );
+  }
+
+  Widget _buildSummaryHeader(List<Application> applications) {
+    final pending = applications.where((app) => app.status == 'pending').length;
+    final reviewing =
+        applications.where((app) => app.status == 'reviewing').length;
+    final accepted =
+        applications.where((app) => app.status == 'accepted').length;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+              child: _SummaryItem(
+                  'Total', applications.length.toString(), Colors.blue)),
+          Expanded(
+              child:
+                  _SummaryItem('Pending', pending.toString(), Colors.orange)),
+          Expanded(
+              child: _SummaryItem(
+                  'Reviewing', reviewing.toString(), Colors.purple)),
+          Expanded(
+              child:
+                  _SummaryItem('Accepted', accepted.toString(), Colors.green)),
+        ],
       ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.people_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No Applications Yet',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Applications for this job will appear here',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildApplicationsList(
-    BuildContext context,
-    WidgetRef ref,
-    List<Application> applications,
-  ) {
-    // Get unique user IDs to fetch user data
-    final userIds = applications.map((app) => app.jobSeekerId).toSet().toList();
-    
-    return ref.watch(usersByIdsProvider(userIds)).when(
-      data: (users) => ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: applications.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final application = applications[index];
-          final user = users[application.jobSeekerId];
-          
-          return _buildApplicationCard(context, ref, application, user);
-        },
-      ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Text('Failed to load user data: $error'),
-      ),
-    );
-  }
-
-  Widget _buildApplicationCard(
-    BuildContext context,
-    WidgetRef ref,
-    Application application,
-    UserProfile? user,
-  ) {
-    final statusColors = ref.watch(applicationStatusColorsProvider);
-    final statusLabels = ref.watch(applicationStatusLabelsProvider);
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(32),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Header with name and status
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.blue[600],
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.name ?? 'Unknown Applicant',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (user?.city != null) ...[
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${user!.city}${user.country != null ? ', ${user.country}' : ''}',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                _buildStatusChip(context, application.status, statusColors, statusLabels),
-              ],
-            ),
-            
+            Icon(Icons.people_outline, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
-            
-            // Application details
-            Row(
-              children: [
-                // Expected salary
-                if (application.expectedSalary != null) ...[
-                  Expanded(
-                    child: _buildInfoItem(
-                      context,
-                      Icons.attach_money,
-                      'Expected Salary',
-                      'PKR ${_formatSalary(application.expectedSalary!)}',
-                    ),
-                  ),
-                ],
-                
-                // Experience years
-                if (user?.experienceYears != null) ...[
-                  Expanded(
-                    child: _buildInfoItem(
-                      context,
-                      Icons.work_history,
-                      'Experience',
-                      '${user!.experienceYears} years',
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Cover letter (if exists)
-            if (application.coverLetter != null && application.coverLetter!.isNotEmpty) ...[
-              Text(
-                'Cover Letter',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: Text(
-                  application.coverLetter!,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            
-            // Actions
-            Row(
-              children: [
-                // View CV button
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _launchCV(application.cvUrl),
-                    icon: const Icon(Icons.description, size: 18),
-                    label: const Text('View CV'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(width: 12),
-                
-                // Status dropdown
-                Expanded(
-                  flex: 2,
-                  child: _buildStatusDropdown(context, ref, application),
-                ),
-              ],
-            ),
-            
-            // Applied date
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.schedule, size: 14, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  'Applied ${_formatDate(application.createdAt)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(
-    BuildContext context,
-    String status,
-    Map<String, Color> statusColors,
-    Map<String, String> statusLabels,
-  ) {
-    final color = statusColors[status] ?? Colors.grey;
-    final label = statusLabels[status] ?? status;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String value,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 14, color: Colors.grey[600]),
-            const SizedBox(width: 4),
             Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-                fontSize: 11,
-              ),
+              'No Applications Yet',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Applications will appear here when candidates apply to this job.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade500,
+                  ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildStatusDropdown(
-    BuildContext context,
-    WidgetRef ref,
-    Application application,
-  ) {
-    final statusLabels = ref.watch(applicationStatusLabelsProvider);
-    
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: application.status,
-          isExpanded: true,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          items: statusLabels.entries.map((entry) {
-            return DropdownMenuItem<String>(
-              value: entry.key,
-              child: Text(
-                entry.value,
-                style: const TextStyle(fontSize: 14),
-              ),
-            );
-          }).toList(),
-          onChanged: (newStatus) {
-            if (newStatus != null && newStatus != application.status) {
-              _updateApplicationStatus(ref, application.id, newStatus);
-            }
-          },
+  Widget _buildErrorState(BuildContext context, String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text('Error loading applicants',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(error, textAlign: TextAlign.center),
+          ],
         ),
       ),
     );
   }
 
   Future<void> _updateApplicationStatus(
+    BuildContext context,
     WidgetRef ref,
-    String applicationId,
+    Application application,
     String newStatus,
   ) async {
     try {
-      final notifier = ref.read(applicationNotifierProvider.notifier);
-      await notifier.updateApplicationStatus(
-        applicationId: applicationId,
-        newStatus: newStatus,
+      // Update status in Firebase
+      await FirebaseFirestore.instance
+          .collection('applications')
+          .doc(application.id)
+          .update({
+        'status': newStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Send email notification to candidate
+      await _sendStatusUpdateEmail(application, newStatus);
+
+      // Log analytics
+      await AnalyticsService.logStatusChange(
+        jobId: jobId,
+        status: newStatus,
+        previousStatus: application.status,
       );
-      
-      // Show success message
-      if (ref.context.mounted) {
-        ScaffoldMessenger.of(ref.context).showSnackBar(
+
+      // Refresh the applications list
+      ref.invalidate(applicationsForJobProvider(jobId));
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Application status updated to ${newStatus}'),
+            content: Text('Application status updated to $newStatus'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      // Show error message
-      if (ref.context.mounted) {
-        ScaffoldMessenger.of(ref.context).showSnackBar(
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update status: $e'),
+            content: Text('Error updating status: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -438,41 +218,642 @@ class ApplicantsListPage extends ConsumerWidget {
     }
   }
 
-  Future<void> _launchCV(String cvUrl) async {
+  Future<void> _sendStatusUpdateEmail(
+      Application application, String newStatus) async {
     try {
-      final uri = Uri.parse(cvUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'Could not launch CV URL';
+      String subject = '';
+      String message = '';
+
+      switch (newStatus) {
+        case 'reviewing':
+          subject = 'Application Under Review - ${application.jobTitle}';
+          message = '''
+Dear Candidate,
+
+Thank you for your application for the ${application.jobTitle} position at ${application.employerName}.
+
+We are currently reviewing your application and will get back to you soon.
+
+Best regards,
+${application.employerName} Team
+''';
+          break;
+
+        case 'accepted':
+          subject =
+              'Congratulations! Application Accepted - ${application.jobTitle}';
+          message = '''
+Dear Candidate,
+
+Congratulations! We are pleased to inform you that your application for the ${application.jobTitle} position has been accepted.
+
+We will contact you soon to discuss the next steps.
+
+Best regards,
+${application.employerName} Team
+''';
+          break;
+
+        case 'rejected':
+          subject = 'Application Update - ${application.jobTitle}';
+          message = '''
+Dear Candidate,
+
+Thank you for your interest in the ${application.jobTitle} position at ${application.employerName}.
+
+After careful consideration, we have decided to move forward with other candidates. We appreciate the time you took to apply and wish you the best in your job search.
+
+Best regards,
+${application.employerName} Team
+''';
+          break;
+
+        case 'interviewing':
+          subject = 'Interview Scheduled - ${application.jobTitle}';
+          message = '''
+Dear Candidate,
+
+We are pleased to inform you that we would like to schedule an interview for the ${application.jobTitle} position.
+
+You will receive interview details shortly.
+
+Best regards,
+${application.employerName} Team
+''';
+          break;
+      }
+
+      if (subject.isNotEmpty && message.isNotEmpty) {
+        await EmailService.sendEmail(
+          to: 'candidate@example.com', // In real app, get from user profile
+          toName: 'Candidate',
+          subject: subject,
+          htmlContent: message.replaceAll('\n', '<br>'),
+          textContent: message,
+          emailType: 'application_status_update',
+          metadata: {
+            'applicationId': application.id,
+            'jobId': application.jobId,
+            'newStatus': newStatus,
+          },
+        );
       }
     } catch (e) {
-      print('Error launching CV: $e');
-      // You might want to show a snackbar here
+      print('Error sending status update email: $e');
     }
   }
 
-  String _formatSalary(int salary) {
-    if (salary >= 1000000) {
-      return '${(salary / 1000000).toStringAsFixed(1)}M';
-    } else if (salary >= 1000) {
-      return '${(salary / 1000).toStringAsFixed(0)}K';
+  void _viewCV(BuildContext context, Application application) {
+    if (application.cvUrl.isNotEmpty) {
+      _launchURL(application.cvUrl);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No CV available')),
+      );
     }
-    return salary.toString();
+  }
+
+  void _scheduleInterview(
+      BuildContext context, WidgetRef ref, Application application) {
+    showDialog(
+      context: context,
+      builder: (context) => _ScheduleInterviewDialog(
+        application: application,
+        onScheduled: () {
+          // Update status to interviewing and refresh
+          _updateApplicationStatus(context, ref, application, 'interviewing');
+        },
+      ),
+    );
+  }
+
+  Future<void> _launchURL(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+}
+
+// Include all the same widgets from the previous file
+class _SummaryItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _SummaryItem(this.label, this.value, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey.shade600,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ApplicantCard extends ConsumerWidget {
+  final Application application;
+  final String jobTitle;
+  final Function(String) onStatusUpdate;
+  final VoidCallback onViewCV;
+  final VoidCallback onScheduleInterview;
+
+  const _ApplicantCard({
+    required this.application,
+    required this.jobTitle,
+    required this.onStatusUpdate,
+    required this.onViewCV,
+    required this.onScheduleInterview,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userProfileAsync =
+        ref.watch(userStreamProvider(application.jobSeekerId));
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor:
+                      _getStatusColor(application.status).withOpacity(0.1),
+                  child: Icon(
+                    _getStatusIcon(application.status),
+                    color: _getStatusColor(application.status),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      userProfileAsync.when(
+                        data: (userProfile) => Text(
+                          userProfile?.name ?? 'Unknown Applicant',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                        loading: () => const Text('Loading...'),
+                        error: (_, __) => Text(
+                          'Candidate ${application.jobSeekerId.substring(0, 8)}...',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                      ),
+                      Text(
+                        'Applied ${_formatDate(application.createdAt)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey.shade600,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                _StatusChip(status: application.status),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Application Details
+            if (application.expectedSalary != null) ...[
+              Row(
+                children: [
+                  Icon(Icons.attach_money,
+                      size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Text(
+                      'Expected Salary: PKR ${application.expectedSalary!.toStringAsFixed(0)}'),
+                ],
+              ),
+              const SizedBox(height: 4),
+            ],
+
+            if (application.coverLetter != null &&
+                application.coverLetter!.isNotEmpty) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.message, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      application.coverLetter!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ] else ...[
+              const SizedBox(height: 4),
+            ],
+
+            // Action Buttons
+            Row(
+              children: [
+                // View CV Button
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onViewCV,
+                    icon: const Icon(Icons.description, size: 18),
+                    label: const Text('View CV'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Status Action Button
+                Expanded(
+                  child: _buildActionButton(context),
+                ),
+              ],
+            ),
+
+            // Additional Actions Row (if needed)
+            if (application.status == 'pending') ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => onStatusUpdate('reviewing'),
+                      icon: const Icon(Icons.rate_review, size: 18),
+                      label: const Text('Start Review'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => onStatusUpdate('rejected'),
+                      icon: const Icon(Icons.close, size: 18),
+                      label: const Text('Reject'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context) {
+    switch (application.status) {
+      case 'reviewing':
+        return ElevatedButton.icon(
+          onPressed: onScheduleInterview,
+          icon: const Icon(Icons.calendar_today, size: 18),
+          label: const Text('Schedule Interview'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+          ),
+        );
+
+      case 'interviewing':
+        return ElevatedButton.icon(
+          onPressed: () => onStatusUpdate('accepted'),
+          icon: const Icon(Icons.check_circle, size: 18),
+          label: const Text('Accept'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+          ),
+        );
+
+      case 'accepted':
+        return ElevatedButton.icon(
+          onPressed: () {
+            // Contact candidate
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Contact functionality coming soon')),
+            );
+          },
+          icon: const Icon(Icons.contact_mail, size: 18),
+          label: const Text('Contact'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+          ),
+        );
+
+      case 'rejected':
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Text(
+            'Rejected',
+            style: TextStyle(color: Colors.grey.shade600),
+            textAlign: TextAlign.center,
+          ),
+        );
+
+      default:
+        return ElevatedButton.icon(
+          onPressed: () => onStatusUpdate('reviewing'),
+          icon: const Icon(Icons.rate_review, size: 18),
+          label: const Text('Review'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+          ),
+        );
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'reviewing':
+        return Colors.purple;
+      case 'interviewing':
+        return Colors.blue;
+      case 'accepted':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Icons.pending;
+      case 'reviewing':
+        return Icons.rate_review;
+      case 'interviewing':
+        return Icons.calendar_today;
+      case 'accepted':
+        return Icons.check_circle;
+      case 'rejected':
+        return Icons.cancel;
+      default:
+        return Icons.help;
+    }
   }
 
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
 
-    if (difference.inDays > 7) {
-      return '${date.day}/${date.month}/${date.year}';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+    if (difference.inDays > 0) {
+      return '${difference.inDays} days ago';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+      return '${difference.inHours} hours ago';
     } else {
       return 'Just now';
+    }
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String status;
+
+  const _StatusChip({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getStatusColor(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'reviewing':
+        return Colors.purple;
+      case 'interviewing':
+        return Colors.blue;
+      case 'accepted':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+}
+
+class _ScheduleInterviewDialog extends StatefulWidget {
+  final Application application;
+  final VoidCallback onScheduled;
+
+  const _ScheduleInterviewDialog({
+    required this.application,
+    required this.onScheduled,
+  });
+
+  @override
+  State<_ScheduleInterviewDialog> createState() =>
+      _ScheduleInterviewDialogState();
+}
+
+class _ScheduleInterviewDialogState extends State<_ScheduleInterviewDialog> {
+  DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
+  TimeOfDay selectedTime = const TimeOfDay(hour: 10, minute: 0);
+  String interviewType = 'Video Call';
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Schedule Interview'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Candidate: ${widget.application.jobSeekerId.substring(0, 8)}...',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+
+            // Date Selection
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Date'),
+              subtitle: Text(
+                  '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 30)),
+                );
+                if (date != null) {
+                  setState(() => selectedDate = date);
+                }
+              },
+            ),
+
+            // Time Selection
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.access_time),
+              title: const Text('Time'),
+              subtitle: Text(selectedTime.format(context)),
+              onTap: () async {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: selectedTime,
+                );
+                if (time != null) {
+                  setState(() => selectedTime = time);
+                }
+              },
+            ),
+
+            // Interview Type
+            const SizedBox(height: 8),
+            const Text('Interview Type'),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: interviewType,
+              items: const [
+                DropdownMenuItem(
+                    value: 'Video Call', child: Text('Video Call')),
+                DropdownMenuItem(value: 'In-Person', child: Text('In-Person')),
+                DropdownMenuItem(
+                    value: 'Phone Call', child: Text('Phone Call')),
+              ],
+              onChanged: (value) => setState(() => interviewType = value!),
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            // Send interview scheduled email
+            await _sendInterviewScheduledEmail();
+
+            Navigator.of(context).pop();
+            widget.onScheduled();
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Interview scheduled for ${selectedDate.day}/${selectedDate.month} at ${selectedTime.format(context)}',
+                  ),
+                ),
+              );
+            }
+          },
+          child: const Text('Schedule'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _sendInterviewScheduledEmail() async {
+    try {
+      final subject = 'Interview Scheduled - ${widget.application.jobTitle}';
+      final message = '''
+Dear Candidate,
+
+We are pleased to inform you that an interview has been scheduled for the ${widget.application.jobTitle} position.
+
+Interview Details:
+- Date: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}
+- Time: ${selectedTime.format(context)}
+- Type: $interviewType
+
+We look forward to speaking with you.
+
+Best regards,
+${widget.application.employerName} Team
+''';
+
+      await EmailService.sendEmail(
+        to: 'candidate@example.com', // In real app, get from user profile
+        toName: 'Candidate',
+        subject: subject,
+        htmlContent: message.replaceAll('\n', '<br>'),
+        textContent: message,
+        emailType: 'interview_scheduled',
+        metadata: {
+          'applicationId': widget.application.id,
+          'jobId': widget.application.jobId,
+          'interviewDate': selectedDate.toIso8601String(),
+          'interviewTime': '${selectedTime.hour}:${selectedTime.minute}',
+          'interviewType': interviewType,
+        },
+      );
+    } catch (e) {
+      print('Error sending interview scheduled email: $e');
     }
   }
 }

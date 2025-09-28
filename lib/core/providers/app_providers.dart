@@ -44,9 +44,15 @@ final citiesProvider = FutureProvider<List<String>>((ref) async {
 final jobsByEmployerProvider =
     StreamProvider.family<List<Job>, String>((ref, employerId) {
   final repository = ref.watch(jobRepositoryProvider);
-  return repository
-      .streamJobsByEmployerId(employerId)
-      .map((result) => result.data ?? []);
+  return repository.streamJobsByEmployerId(employerId).map((result) {
+    print(
+        'Jobs Provider - Result for employerId $employerId: ${result.data?.length ?? 0} jobs');
+    if (result.isFailure) {
+      print('Jobs Provider - Error: ${result.errorMessage}');
+      throw Exception(result.errorMessage ?? 'Failed to load jobs');
+    }
+    return result.data ?? [];
+  });
 });
 
 // Search providers

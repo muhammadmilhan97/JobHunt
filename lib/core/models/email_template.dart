@@ -150,7 +150,7 @@ The JobHunt Team
         <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;"><a href="#" style="background: #2563EB; color: #fff; padding: 12px 22px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">Open JobHunt</a></p>
         
         <p style="font-size: 13px; color: #6B7280;">If you didn't create this account, contact support immediately: support@jobhunt.app</p>
-      ''';
+    ''';
       subject = 'Welcome to JobHunt — Account Created';
     }
 

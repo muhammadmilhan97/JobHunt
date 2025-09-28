@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../core/providers/app_providers.dart';
+import 'package:intl/intl.dart';
+import '../../../core/providers/applications_providers.dart';
 import '../../../core/models/models.dart';
 import '../../../core/widgets/app_logo.dart';
 
@@ -12,9 +13,9 @@ class EmployerHiresPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    final jobsAsync = uid != null
-        ? ref.watch(jobsByEmployerProvider(uid))
-        : const AsyncValue<List<Job>>.data(const []);
+    final applicationsAsync = uid != null
+        ? ref.watch(applicationsForEmployerProvider(uid))
+        : const AsyncValue<List<Application>>.data([]);
 
     return Scaffold(
       appBar: BrandedAppBar(
@@ -27,127 +28,158 @@ class EmployerHiresPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          if (uid != null) {
-            ref.invalidate(jobsByEmployerProvider(uid));
-          }
-          await Future.delayed(const Duration(milliseconds: 500));
-        },
-        child: jobsAsync.when(
-          data: (jobs) => _buildHiresList(context, jobs),
-          loading: () => _buildLoadingState(),
-          error: (error, stack) => _buildErrorState(context, error.toString()),
+      body: applicationsAsync.when(
+        data: (applications) => _buildHiresContent(context, applications, ref),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => _buildErrorState(context, error.toString()),
+      ),
+    );
+  }
+
+  Widget _buildHiresContent(
+      BuildContext context, List<Application> applications, WidgetRef ref) {
+    // Filter applications by status
+    final acceptedApplications =
+        applications.where((app) => app.status == 'accepted').toList();
+    final recentHires = acceptedApplications.take(5).toList(); // Last 5 hires
+
+    // Calculate analytics
+    final totalHires = acceptedApplications.length;
+    final thisMonthHires = acceptedApplications.where((app) {
+      final now = DateTime.now();
+      final appDate = app.updatedAt ?? app.createdAt;
+      return appDate.year == now.year && appDate.month == now.month;
+    }).length;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) {
+          ref.invalidate(applicationsForEmployerProvider(uid));
+        }
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Analytics Section
+            _buildAnalyticsSection(applications, totalHires, thisMonthHires),
+
+            const SizedBox(height: 24),
+
+            // Recent Hires
+            if (recentHires.isNotEmpty) ...[
+              _buildSectionTitle(context, 'Recent Hires'),
+              const SizedBox(height: 12),
+              ...recentHires.map((app) => _HireCard(
+                    application: app,
+                    onViewProfile: () => _viewProfile(context, app),
+                    onContact: () => _contactHire(context, app),
+                  )),
+              const SizedBox(height: 24),
+            ],
+
+            // Hire Statistics
+            _buildHireStatistics(context, applications),
+
+            // Empty State
+            if (acceptedApplications.isEmpty) _buildEmptyState(context),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHiresList(BuildContext context, List<Job> jobs) {
-    if (jobs.isEmpty) {
-      return _buildEmptyState(context);
-    }
-
-    // Calculate total hires across all jobs
-    final totalHires =
-        jobs.fold<int>(0, (sum, job) => sum + (job.id.hashCode % 5));
-    final recentHires =
-        jobs.fold<int>(0, (sum, job) => sum + (job.id.hashCode % 2));
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Summary Cards
-          Row(
-            children: [
-              Expanded(
-                child: _SummaryCard(
-                  title: 'Total Hires',
-                  value: totalHires.toString(),
-                  icon: Icons.check_circle_outline,
-                  color: Colors.green,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _SummaryCard(
-                  title: 'Recent Hires',
-                  value: recentHires.toString(),
-                  icon: Icons.person_add_outlined,
-                  color: Colors.blue,
-                ),
-              ),
-            ],
+  Widget _buildAnalyticsSection(
+      List<Application> applications, int totalHires, int thisMonthHires) {
+    return Row(
+      children: [
+        Expanded(
+          child: _AnalyticsCard(
+            title: 'Total Hires',
+            value: totalHires.toString(),
+            icon: Icons.people_outline,
+            color: Colors.green,
           ),
-
-          const SizedBox(height: 24),
-
-          // Recent Hires
-          Text(
-            'Recent Hires',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _AnalyticsCard(
+            title: 'Recent Hires',
+            value: thisMonthHires.toString(),
+            icon: Icons.trending_up,
+            color: Colors.blue,
           ),
-          const SizedBox(height: 16),
-
-          // Mock hire data
-          ..._generateMockHires(jobs).map((hire) => _HireCard(hire: hire)),
-
-          const SizedBox(height: 24),
-
-          // Hire Statistics
-          Text(
-            'Hire Statistics',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 16),
-
-          _buildHireStatistics(context, jobs),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildLoadingState() {
-    return const Center(
-      child: CircularProgressIndicator(),
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
     );
   }
 
-  Widget _buildErrorState(BuildContext context, String error) {
-    return Center(
+  Widget _buildHireStatistics(
+      BuildContext context, List<Application> applications) {
+    final acceptedApplications =
+        applications.where((app) => app.status == 'accepted').toList();
+    final totalApplications = applications.length;
+
+    // Calculate statistics
+    final hireRate = totalApplications > 0
+        ? (acceptedApplications.length / totalApplications * 100)
+        : 0.0;
+    final avgTimeToHire =
+        19; // Mock data - in real app, calculate from interview to hire dates
+    final successRate =
+        89; // Mock data - percentage of hires that stay long-term
+
+    return Card(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
-            const SizedBox(height: 16),
             Text(
-              'Failed to load hires',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade600,
+              'Hire Statistics',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {},
-              child: const Text('Retry'),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatisticItem(
+                    icon: Icons.trending_up,
+                    label: 'Hire Rate',
+                    value: '${hireRate.toStringAsFixed(1)}%',
+                    color: Colors.green,
+                  ),
+                ),
+                Expanded(
+                  child: _StatisticItem(
+                    icon: Icons.access_time,
+                    label: 'Avg. Time to Hire',
+                    value: '$avgTimeToHire days',
+                    color: Colors.blue,
+                  ),
+                ),
+                Expanded(
+                  child: _StatisticItem(
+                    icon: Icons.star,
+                    label: 'Success Rate',
+                    value: '$successRate%',
+                    color: Colors.orange,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -163,106 +195,174 @@ class EmployerHiresPage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.person_add_outlined,
+              Icons.people_outline,
               size: 64,
               color: Colors.grey.shade400,
             ),
             const SizedBox(height: 16),
             Text(
-              'No hires yet',
+              'No Hires Yet',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Colors.grey.shade600,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Start hiring great candidates for your jobs',
+              'Hired candidates will appear here after you accept applications.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.grey.shade500,
                   ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => context.push('/employer/applicants'),
-              icon: const Icon(Icons.people),
-              label: const Text('View Applicants'),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHireStatistics(BuildContext context, List<Job> jobs) {
-    final totalJobs = jobs.length;
-    final totalHires =
-        jobs.fold<int>(0, (sum, job) => sum + (job.id.hashCode % 5));
-    final hireRate = totalJobs > 0
-        ? (totalHires / totalJobs * 100).toStringAsFixed(1)
-        : '0.0';
-
-    return Card(
+  Widget _buildErrorState(BuildContext context, String error) {
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(32),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _StatisticItem(
-                  label: 'Hire Rate',
-                  value: '$hireRate%',
-                  icon: Icons.trending_up,
-                  color: Colors.green,
-                ),
-                _StatisticItem(
-                  label: 'Avg. Time to Hire',
-                  value:
-                      '${jobs.fold<int>(0, (sum, job) => sum + (job.id.hashCode % 30))} days',
-                  icon: Icons.schedule,
-                  color: Colors.blue,
-                ),
-                _StatisticItem(
-                  label: 'Success Rate',
-                  value:
-                      '${(jobs.fold<int>(0, (sum, job) => sum + (job.id.hashCode % 20)) + 80)}%',
-                  icon: Icons.star,
-                  color: Colors.orange,
-                ),
-              ],
-            ),
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text('Error loading hires',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(error, textAlign: TextAlign.center),
           ],
         ),
       ),
     );
   }
 
-  List<MockHire> _generateMockHires(List<Job> jobs) {
-    final hires = <MockHire>[];
-    for (int i = 0; i < jobs.length && i < 5; i++) {
-      final job = jobs[i];
-      final hireDate = DateTime.now().subtract(Duration(days: i * 7));
-      hires.add(MockHire(
-        id: 'hire_${job.id}_${i}',
-        jobTitle: job.title,
-        candidateName: 'Candidate ${i + 1}',
-        hireDate: hireDate,
-        salary: 'PKR ${(50000 + (i * 10000)).toString()}',
-        status: i < 2 ? 'Active' : 'Completed',
-      ));
+  void _viewProfile(BuildContext context, Application application) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Candidate Profile'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Job: ${application.jobTitle}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('Candidate ID: ${application.jobSeekerId}'),
+            const SizedBox(height: 8),
+            Text(
+                'Expected Salary: PKR ${application.expectedSalary ?? 'Not specified'}'),
+            const SizedBox(height: 8),
+            Text(
+                'Hired: ${_formatDate(application.updatedAt ?? application.createdAt)}'),
+            const SizedBox(height: 12),
+            if (application.coverLetter != null) ...[
+              const Text('Cover Letter:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(application.coverLetter!),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Open CV
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Opening CV...')),
+              );
+            },
+            child: const Text('View CV'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _contactHire(BuildContext context, Application application) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Contact Options'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.email),
+              title: const Text('Send Email'),
+              onTap: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Email integration coming soon')),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.phone),
+              title: const Text('Call'),
+              onTap: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Phone integration coming soon')),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.message),
+              title: const Text('Send Message'),
+              onTap: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Messaging feature coming soon')),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} days ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hours ago';
+    } else {
+      return 'Just now';
     }
-    return hires;
   }
 }
 
-class _SummaryCard extends StatelessWidget {
+class _AnalyticsCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
   final Color color;
 
-  const _SummaryCard({
+  const _AnalyticsCard({
     required this.title,
     required this.value,
     required this.icon,
@@ -273,7 +373,7 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -283,7 +383,7 @@ class _SummaryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
+                    color: color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: color, size: 20),
@@ -311,150 +411,16 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _HireCard extends StatelessWidget {
-  final MockHire hire;
-
-  const _HireCard({required this.hire});
-
-  @override
-  Widget build(BuildContext context) {
-    final daysAgo = DateTime.now().difference(hire.hireDate).inDays;
-    final isActive = hire.status == 'Active';
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        hire.jobTitle,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Hired ${hire.candidateName}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    hire.status,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isActive ? Colors.green : Colors.blue,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today_outlined,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  daysAgo == 0 ? 'Today' : '$daysAgo days ago',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(width: 16),
-                Icon(
-                  Icons.attach_money_outlined,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  hire.salary,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('View profile feature coming soon!')),
-                      );
-                    },
-                    icon: const Icon(Icons.person, size: 18),
-                    label: const Text('View Profile'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Contact feature coming soon!')),
-                      );
-                    },
-                    icon: const Icon(Icons.message, size: 18),
-                    label: const Text('Contact'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _StatisticItem extends StatelessWidget {
+  final IconData icon;
   final String label;
   final String value;
-  final IconData icon;
   final Color color;
 
   const _StatisticItem({
+    required this.icon,
     required this.label,
     required this.value,
-    required this.icon,
     required this.color,
   });
 
@@ -465,7 +431,7 @@ class _StatisticItem extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: color, size: 24),
@@ -483,26 +449,127 @@ class _StatisticItem extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 }
 
-class MockHire {
-  final String id;
-  final String jobTitle;
-  final String candidateName;
-  final DateTime hireDate;
-  final String salary;
-  final String status;
+class _HireCard extends StatelessWidget {
+  final Application application;
+  final VoidCallback onViewProfile;
+  final VoidCallback onContact;
 
-  MockHire({
-    required this.id,
-    required this.jobTitle,
-    required this.candidateName,
-    required this.hireDate,
-    required this.salary,
-    required this.status,
+  const _HireCard({
+    required this.application,
+    required this.onViewProfile,
+    required this.onContact,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    final salary = application.expectedSalary;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        application.jobTitle ?? 'Job Position',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Hired Candidate ${application.jobSeekerId.substring(0, 8)}...',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Active',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.green,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.calendar_today,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Text('Today', style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(width: 16),
+                Icon(Icons.attach_money,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Text(
+                  salary != null
+                      ? 'PKR ${NumberFormat('#,###').format(salary)}'
+                      : 'Salary not specified',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onViewProfile,
+                    icon: const Icon(Icons.person, size: 18),
+                    label: const Text('View Profile'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: onContact,
+                    icon: const Icon(Icons.message, size: 18),
+                    label: const Text('Contact'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

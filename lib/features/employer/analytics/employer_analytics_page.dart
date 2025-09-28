@@ -157,7 +157,7 @@ class EmployerAnalyticsPage extends ConsumerWidget {
           crossAxisCount: 2,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
+          childAspectRatio: 1.3,
           children: [
             _AnalyticsCard(
               title: 'Total Jobs',
@@ -196,7 +196,7 @@ class EmployerAnalyticsPage extends ConsumerWidget {
       crossAxisCount: 2,
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.3,
       children: List.generate(
           4,
           (index) => Card(
@@ -439,9 +439,11 @@ class _AnalyticsCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               title,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ],
         ),

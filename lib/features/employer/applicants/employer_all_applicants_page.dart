@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 import '../../../core/providers/applications_providers.dart';
+import '../../../core/providers/user_providers.dart';
 import '../../../core/models/models.dart';
 import '../../../core/widgets/app_logo.dart';
 
@@ -247,33 +250,149 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _ApplicationCard extends StatelessWidget {
+class _ApplicationCard extends ConsumerWidget {
   final Application application;
 
   const _ApplicationCard({required this.application});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userProfileAsync =
+        ref.watch(userStreamProvider(application.jobSeekerId));
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getStatusColor(application.status),
-          child: Icon(
-            _getStatusIcon(application.status),
-            color: Colors.white,
-          ),
-        ),
-        title: Text('Application #${application.id.substring(0, 8)}'),
-        subtitle: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Job ID: ${application.jobId.substring(0, 8)}...'),
-            Text('Status: ${application.status.toUpperCase()}'),
-            Text('Applied: ${_formatDate(application.createdAt)}'),
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: _getStatusColor(application.status),
+                  child: Icon(
+                    _getStatusIcon(application.status),
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      userProfileAsync.when(
+                        data: (userProfile) => Text(
+                          userProfile?.name ?? 'Unknown Applicant',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                        loading: () => const Text('Loading...'),
+                        error: (_, __) => const Text('Error loading name'),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Applied: ${_formatDate(application.createdAt)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey.shade600,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                _getStatusChip(application.status),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Job ID: ${application.jobId.substring(0, 8)}...',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (application.expectedSalary != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Expected: PKR ${NumberFormat('#,##0').format(application.expectedSalary)}',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (application.cvUrl.isNotEmpty)
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final url = Uri.parse(application.cvUrl);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url,
+                            mode: LaunchMode.externalApplication);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Could not open CV')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.description, size: 16),
+                    label: const Text('View CV'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                    ),
+                  ),
+              ],
+            ),
+            if (application.coverLetter != null &&
+                application.coverLetter!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Cover Letter:',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                application.coverLetter!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      // Navigate to job-specific applicants page
+                      context.push(
+                          '/employer/job/${application.jobId}/applicants?title=Job');
+                    },
+                    icon: const Icon(Icons.people, size: 16),
+                    label: const Text('View Details'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionButton(context, ref),
+                ),
+              ],
+            ),
           ],
         ),
-        trailing: _getStatusChip(application.status),
       ),
     );
   }
@@ -332,6 +451,79 @@ class _ApplicationCard extends StatelessWidget {
       return '${difference.inHours} hours ago';
     } else {
       return 'Just now';
+    }
+  }
+
+  Widget _buildActionButton(BuildContext context, WidgetRef ref) {
+    switch (application.status.toLowerCase()) {
+      case 'pending':
+        return ElevatedButton.icon(
+          onPressed: () async {
+            await ref
+                .read(applicationsRepositoryProvider)
+                .updateStatus(application.id, 'reviewing');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Application moved to reviewing')),
+            );
+          },
+          icon: const Icon(Icons.rate_review, size: 16),
+          label: const Text('Start Review'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue.shade700,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+          ),
+        );
+      case 'reviewing':
+        return ElevatedButton.icon(
+          onPressed: () async {
+            await ref
+                .read(applicationsRepositoryProvider)
+                .updateStatus(application.id, 'accepted');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Application accepted')),
+            );
+          },
+          icon: const Icon(Icons.check_circle, size: 16),
+          label: const Text('Accept'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade700,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+          ),
+        );
+      case 'accepted':
+        return ElevatedButton.icon(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Already accepted')),
+            );
+          },
+          icon: const Icon(Icons.check, size: 16),
+          label: const Text('Accepted'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade700,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+          ),
+        );
+      case 'rejected':
+        return ElevatedButton.icon(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Already rejected')),
+            );
+          },
+          icon: const Icon(Icons.cancel, size: 16),
+          label: const Text('Rejected'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red.shade700,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+          ),
+        );
+      default:
+        return const SizedBox.shrink();
     }
   }
 }

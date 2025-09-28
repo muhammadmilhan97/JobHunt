@@ -11,7 +11,7 @@ import '../features/employer/dashboard/employer_dashboard_page.dart';
 import '../features/employer/dashboard/employer_my_jobs_page.dart';
 import '../features/employer/post_job/post_job_page.dart';
 import '../features/employer/company/employer_company_page.dart';
-import '../features/employer/applicants/employer_applicants_page.dart';
+import '../features/employer/applicants/applicants_list_page.dart';
 import '../features/employer/analytics/employer_analytics_page.dart';
 import '../features/employer/applicants/employer_all_applicants_page.dart';
 import '../features/employer/interviews/employer_interviews_page.dart';
@@ -101,7 +101,11 @@ final GoRouter appRouter = GoRouter(
       name: 'employer-applicants',
       builder: (context, state) {
         final jobId = state.pathParameters['jobId']!;
-        return EmployerApplicantsPage(jobId: jobId);
+        final jobTitle = state.uri.queryParameters['title'] ?? 'Job';
+        return ApplicantsListPage(
+          jobId: jobId,
+          jobTitle: jobTitle,
+        );
       },
     ),
 
