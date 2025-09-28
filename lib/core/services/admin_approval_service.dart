@@ -193,93 +193,41 @@ class AdminApprovalService {
   }) async {
     if (!EmailService.isInitialized) return;
 
-    final roleDisplayName = _getRoleDisplayName(userRole);
-    final approverText =
-        approverName != null ? 'by $approverName' : 'by the admin team';
+    // Use the new beautiful templates based on role
+    if (userRole.toLowerCase() == 'employer') {
+      // For employers, we need company name - get from user data
+      try {
+        final userQuery = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: email)
+            .limit(1)
+            .get();
 
-    final htmlContent = '''
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Approved - JobHunt</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #28a745; }
-        .logo { font-size: 24px; font-weight: bold; color: #28a745; }
-        .content { padding: 30px 0; }
-        .success { background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 20px 0; color: #155724; }
-        .button { display: inline-block; padding: 12px 30px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { text-align: center; padding: 20px 0; border-top: 1px solid #eee; color: #666; font-size: 14px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">JobHunt</div>
-        </div>
-        
-        <div class="content">
-            <h2>🎉 Account Approved!</h2>
-            <p>Hello $userName,</p>
-            
-            <div class="success">
-                <strong>Great news!</strong> Your JobHunt account has been approved $approverText.
-            </div>
-            
-            <p>Your account as a <strong>$roleDisplayName</strong> has been successfully reviewed and approved. You can now access all features of the JobHunt platform.</p>
-            
-            <p><strong>What's next?</strong></p>
-            <ul>
-                <li>Sign in to your JobHunt account</li>
-                <li>Complete your profile setup</li>
-                <li>Start exploring job opportunities</li>
-                <li>Connect with potential employers</li>
-            </ul>
-            
-            <a href="${EmailConfig.appDomain}" class="button">Access JobHunt</a>
-            
-            <p>Welcome to the JobHunt community! We're excited to help you on your career journey.</p>
-        </div>
-        
-        <div class="footer">
-            <p>Best regards,<br>The JobHunt Team</p>
-            <p>
-                <a href="${EmailConfig.supportEmail}">Contact Support</a> | 
-                <a href="${EmailConfig.appDomain}">Visit JobHunt</a>
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-    ''';
+        String companyName = userName; // Default fallback
+        if (userQuery.docs.isNotEmpty) {
+          final userData = userQuery.docs.first.data();
+          companyName = userData['companyName'] ?? userData['name'] ?? userName;
+        }
 
-    await EmailService.sendEmail(
-      to: email,
-      toName: userName,
-      subject: 'Account Approved - Welcome to JobHunt! 🎉',
-      htmlContent: htmlContent,
-      textContent: '''
-Hello $userName,
-
-Great news! Your JobHunt account has been approved $approverText.
-
-Your account as a $roleDisplayName has been successfully reviewed and approved. You can now access all features of the JobHunt platform.
-
-What's next:
-- Sign in to your JobHunt account
-- Complete your profile setup
-- Start exploring job opportunities
-- Connect with potential employers
-
-Welcome to the JobHunt community!
-
-Best regards,
-The JobHunt Team
-      ''',
-    );
+        await EmailService.sendAccountApprovedEmployerEmail(
+          to: email,
+          toName: userName,
+          companyName: companyName,
+        );
+      } catch (e) {
+        // Fallback to job seeker template if we can't get company name
+        await EmailService.sendAccountApprovedJobSeekerEmail(
+          to: email,
+          toName: userName,
+        );
+      }
+    } else {
+      // For job seekers
+      await EmailService.sendAccountApprovedJobSeekerEmail(
+        to: email,
+        toName: userName,
+      );
+    }
   }
 
   /// Send rejection email
@@ -292,96 +240,11 @@ The JobHunt Team
   }) async {
     if (!EmailService.isInitialized) return;
 
-    final roleDisplayName = _getRoleDisplayName(userRole);
-    final approverText =
-        approverName != null ? 'by $approverName' : 'by the admin team';
-
-    final htmlContent = '''
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Review Update - JobHunt</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #dc3545; }
-        .logo { font-size: 24px; font-weight: bold; color: #dc3545; }
-        .content { padding: 30px 0; }
-        .warning { background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 20px 0; color: #721c24; }
-        .button { display: inline-block; padding: 12px 30px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { text-align: center; padding: 20px 0; border-top: 1px solid #eee; color: #666; font-size: 14px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">JobHunt</div>
-        </div>
-        
-        <div class="content">
-            <h2>Account Review Update</h2>
-            <p>Hello $userName,</p>
-            
-            <p>Thank you for your interest in joining JobHunt as a $roleDisplayName.</p>
-            
-            <div class="warning">
-                <strong>Account Status:</strong> After careful review $approverText, we are unable to approve your account at this time.
-            </div>
-            
-            <p><strong>Reason:</strong> $rejectionReason</p>
-            
-            <p><strong>What you can do:</strong></p>
-            <ul>
-                <li>Review our terms of service and community guidelines</li>
-                <li>Ensure all provided information is accurate and complete</li>
-                <li>Contact our support team if you have questions</li>
-                <li>You may reapply after addressing the concerns mentioned above</li>
-            </ul>
-            
-            <a href="${EmailConfig.supportEmail}" class="button">Contact Support</a>
-            
-            <p>We appreciate your understanding and encourage you to reach out if you have any questions.</p>
-        </div>
-        
-        <div class="footer">
-            <p>Best regards,<br>The JobHunt Team</p>
-            <p>
-                <a href="${EmailConfig.supportEmail}">Contact Support</a> | 
-                <a href="${EmailConfig.appDomain}">Visit JobHunt</a>
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-    ''';
-
-    await EmailService.sendEmail(
+    // Use the new beautiful rejection template
+    await EmailService.sendAccountRejectedEmail(
       to: email,
       toName: userName,
-      subject: 'Account Review Update - JobHunt',
-      htmlContent: htmlContent,
-      textContent: '''
-Hello $userName,
-
-Thank you for your interest in joining JobHunt as a $roleDisplayName.
-
-After careful review $approverText, we are unable to approve your account at this time.
-
-Reason: $rejectionReason
-
-What you can do:
-- Review our terms of service and community guidelines
-- Ensure all provided information is accurate and complete
-- Contact our support team if you have questions
-- You may reapply after addressing the concerns mentioned above
-
-We appreciate your understanding.
-
-Best regards,
-The JobHunt Team
-      ''',
+      reason: rejectionReason,
     );
   }
 

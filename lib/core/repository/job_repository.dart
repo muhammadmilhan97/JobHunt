@@ -169,9 +169,17 @@ class JobRepository {
           await EmailService.sendJobPostingConfirmationEmail(
             to: employer.email,
             toName: employer.name,
-            jobTitle: job.title,
             companyName: job.company,
+            jobTitle: job.title,
             jobId: job.id,
+            location: '${job.locationCity}, ${job.locationCountry}',
+            salary: job.salaryMin != null && job.salaryMax != null
+                ? 'PKR ${job.salaryMin!.toStringAsFixed(0)} - PKR ${job.salaryMax!.toStringAsFixed(0)}'
+                : job.salaryMin != null
+                    ? 'PKR ${job.salaryMin!.toStringAsFixed(0)}+'
+                    : 'Salary not specified',
+            jobType:
+                'Full-time', // Default since jobType doesn't exist in Job model
           );
         }
       }

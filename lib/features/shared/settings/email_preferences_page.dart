@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// import '../../../core/providers/user_providers.dart';
 import '../../../core/providers/auth_providers.dart';
-// import '../../../core/repository/user_repository.dart';
-// import '../../../core/widgets/branded_app_bar.dart';
-import '../../../core/services/job_alert_service.dart';
+import '../../../core/repository/user_repository.dart';
+import '../../../core/widgets/app_logo.dart';
 
 class EmailPreferencesPage extends ConsumerStatefulWidget {
   const EmailPreferencesPage({super.key});
@@ -32,15 +30,15 @@ class _EmailPreferencesPageState extends ConsumerState<EmailPreferencesPage> {
     });
 
     try {
-      // Update using JobAlertService
-      await JobAlertService.updateEmailPreferences(
-        userId: userProfile.id,
-        emailNotifications: emailNotifications,
-        weeklyDigest: weeklyDigest,
-        instantAlerts: instantAlerts,
-      );
+      // Update using UserRepository
+      final userRepo = UserRepository();
+      await userRepo.updateUser(userProfile.id, {
+        'emailNotifications': emailNotifications,
+        'weeklyDigest': weeklyDigest,
+        'instantAlerts': instantAlerts,
+      });
 
-      // Update successful - preferences are handled by JobAlertService
+      // Update successful - preferences are saved to user profile
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -73,8 +71,8 @@ class _EmailPreferencesPageState extends ConsumerState<EmailPreferencesPage> {
     final userProfileAsync = ref.watch(currentUserProfileProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Email Preferences'),
+      appBar: BrandedAppBar(
+        title: 'Email Preferences',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),

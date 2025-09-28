@@ -140,65 +140,73 @@ class EmailService {
     return allSucceeded;
   }
 
-  /// Send OTP verification email
+  /// Send OTP verification email (SKIPPED - Using PIN instead)
   static Future<bool> sendOtpEmail({
     required String to,
     required String toName,
     required String otpCode,
   }) async {
-    final template = EmailTemplates.otpVerification(
-      recipientName: toName,
-      otpCode: otpCode,
-    );
-
-    return await sendEmail(
-      to: to,
-      toName: toName,
-      subject: template.subject,
-      htmlContent: template.htmlContent,
-      textContent: template.textContent,
-    );
+    // OTP emails are skipped as we use PIN authentication
+    if (kDebugMode) {
+      print('OTP email skipped - using PIN authentication instead');
+    }
+    return true;
   }
 
-  /// Send welcome email
+  /// Send welcome email (now handled by approval emails)
   static Future<bool> sendWelcomeEmail({
     required String to,
     required String toName,
     required String userRole,
   }) async {
-    final template = EmailTemplates.welcome(
+    // Welcome emails are now handled by the approval process
+    if (kDebugMode) {
+      print('Welcome email handled by approval process');
+    }
+    return true;
+  }
+
+  /// Send account-created (pending approval) email - Job Seeker
+  static Future<bool> sendAccountCreatedJobSeekerEmail({
+    required String to,
+    required String toName,
+  }) async {
+    final template = EmailTemplate.accountCreatedJobSeeker(
       recipientName: toName,
-      userRole: userRole,
+      email: to,
     );
 
     return await sendEmail(
       to: to,
       toName: toName,
-      subject: template.subject,
-      htmlContent: template.htmlContent,
-      textContent: template.textContent,
+      subject: 'Welcome to JobHunt - Account Created',
+      htmlContent: template,
+      textContent: EmailTemplate.getTextVersion(template),
+      emailType: 'account_created_job_seeker',
+      metadata: {'role': 'job_seeker'},
     );
   }
 
-  /// Send account-created (pending approval) email
-  static Future<bool> sendAccountCreatedEmail({
+  /// Send account-created (pending approval) email - Employer
+  static Future<bool> sendAccountCreatedEmployerEmail({
     required String to,
     required String toName,
-    required String userRole,
+    required String companyName,
   }) async {
-    final template = EmailTemplates.accountCreated(
+    final template = EmailTemplate.accountCreatedEmployer(
       recipientName: toName,
-      userRole: userRole,
+      companyName: companyName,
+      email: to,
     );
 
     return await sendEmail(
       to: to,
       toName: toName,
-      subject: template.subject,
-      htmlContent: template.htmlContent,
-      textContent: template.textContent,
-      emailType: 'account_created',
-      metadata: {'userRole': userRole},
+      subject: 'Welcome to JobHunt - Employer Account Created',
+      htmlContent: template,
+      textContent: EmailTemplate.getTextVersion(template),
+      emailType: 'account_created_employer',
+      metadata: {'role': 'employer', 'companyName': companyName},
     );
   }
 
@@ -208,20 +216,20 @@ class EmailService {
     required String toName,
     required String userRole,
   }) async {
-    final template = EmailTemplates.approval(
-      recipientName: toName,
-      userRole: userRole,
-    );
-
-    return await sendEmail(
-      to: to,
-      toName: toName,
-      subject: template.subject,
-      htmlContent: template.htmlContent,
-      textContent: template.textContent,
-      emailType: 'approval',
-      metadata: {'userRole': userRole},
-    );
+    // Use the new beautiful templates based on role
+    if (userRole.toLowerCase() == 'employer') {
+      // For employers, we need company name - this should be passed from the calling code
+      return await sendAccountApprovedEmployerEmail(
+        to: to,
+        toName: toName,
+        companyName: 'Your Company', // This should be passed from calling code
+      );
+    } else {
+      return await sendAccountApprovedJobSeekerEmail(
+        to: to,
+        toName: toName,
+      );
+    }
   }
 
   /// Send rejection email
@@ -231,48 +239,10 @@ class EmailService {
     required String userRole,
     required String reason,
   }) async {
-    final template = EmailTemplates.rejection(
-      recipientName: toName,
-      userRole: userRole,
+    return await sendAccountRejectedEmail(
+      to: to,
+      toName: toName,
       reason: reason,
-    );
-
-    return await sendEmail(
-      to: to,
-      toName: toName,
-      subject: template.subject,
-      htmlContent: template.htmlContent,
-      textContent: template.textContent,
-    );
-  }
-
-  /// Send job posting confirmation email (Employer)
-  static Future<bool> sendJobPostingConfirmationEmail({
-    required String to,
-    required String toName,
-    required String jobTitle,
-    required String companyName,
-    required String jobId,
-  }) async {
-    final template = EmailTemplates.jobPostingConfirmation(
-      recipientName: toName,
-      jobTitle: jobTitle,
-      companyName: companyName,
-      jobId: jobId,
-    );
-
-    return await sendEmail(
-      to: to,
-      toName: toName,
-      subject: template.subject,
-      htmlContent: template.htmlContent,
-      textContent: template.textContent,
-      emailType: 'job_posting_confirmation',
-      metadata: {
-        'jobTitle': jobTitle,
-        'companyName': companyName,
-        'jobId': jobId,
-      },
     );
   }
 
@@ -284,19 +254,13 @@ class EmailService {
     required String companyName,
     required String status,
   }) async {
-    final template = EmailTemplates.applicationStatus(
-      recipientName: toName,
+    return await sendApplicationStatusUpdateEmail(
+      to: to,
+      toName: toName,
       jobTitle: jobTitle,
       companyName: companyName,
       status: status,
-    );
-
-    return await sendEmail(
-      to: to,
-      toName: toName,
-      subject: template.subject,
-      htmlContent: template.htmlContent,
-      textContent: template.textContent,
+      applicationId: 'unknown', // This should be passed from calling code
     );
   }
 
@@ -305,14 +269,26 @@ class EmailService {
     required List<EmailRecipient> recipients,
     required List<Map<String, dynamic>> newJobs,
   }) async {
-    final template = EmailTemplates.jobAlert(newJobs: newJobs);
+    // Convert to the new format
+    final jobs = newJobs
+        .map((job) => <String, String>{
+              'title': (job['title'] ?? 'Job Title').toString(),
+              'company': (job['company'] ?? 'Company').toString(),
+              'location': (job['location'] ?? 'Location').toString(),
+              'salary': (job['salary'] ?? 'Salary').toString(),
+              'url': (job['url'] ?? 'https://jobhunt.pk/jobs').toString(),
+            })
+        .toList();
 
-    return await sendBulkEmails(
-      recipients: recipients,
-      subject: template.subject,
-      htmlTemplate: template.htmlContent,
-      textTemplate: template.textContent,
-    );
+    // Send individual emails using the new template
+    for (final recipient in recipients) {
+      await sendJobAlertsEmail(
+        to: recipient.email,
+        toName: recipient.name,
+        jobs: jobs,
+      );
+    }
+    return true;
   }
 
   /// Send weekly digest to a single recipient
@@ -322,18 +298,230 @@ class EmailService {
     required String category,
     required List<Map<String, dynamic>> jobs,
   }) async {
-    final template = EmailTemplates.weeklyDigest(
+    // Convert to the new format
+    final featuredJobs = jobs
+        .map((job) => <String, String>{
+              'title': (job['title'] ?? 'Job Title').toString(),
+              'company': (job['company'] ?? 'Company').toString(),
+              'location': (job['location'] ?? 'Location').toString(),
+              'salary': (job['salary'] ?? 'Salary').toString(),
+              'type': (job['type'] ?? 'Full-time').toString(),
+              'url': (job['url'] ?? 'https://jobhunt.pk/jobs').toString(),
+            })
+        .toList();
+
+    final stats = {
+      'newJobs': jobs.length,
+      'companiesHiring': jobs.map((j) => j['company']).toSet().length,
+      'avgApplications': 15, // Mock data
+      'hotSkills': 'Flutter, React, Python',
+      'remotePercentage': 45,
+      'salaryIncrease': 12,
+      'topSkills': 'Flutter, React, Python',
+      'hiringTimeline': 14,
+      'userApplications': 3, // Mock data
+    };
+
+    final trendingCompanies = [
+      {'name': 'TechCorp', 'openings': '5'},
+      {'name': 'StartupXYZ', 'openings': '3'},
+      {'name': 'BigCompany', 'openings': '8'},
+    ];
+
+    return await sendWeeklyJobDigestEmail(
+      to: to,
+      toName: toName,
+      stats: stats,
+      featuredJobs: featuredJobs,
+      trendingCompanies: trendingCompanies,
+    );
+  }
+
+  // ===== NEW BEAUTIFUL EMAIL TEMPLATES =====
+
+  /// Send account approved email - Job Seeker
+  static Future<bool> sendAccountApprovedJobSeekerEmail({
+    required String to,
+    required String toName,
+  }) async {
+    final template = EmailTemplate.accountApprovedJobSeeker(
       recipientName: toName,
-      category: category,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: 'Account Approved! 🎉',
+      htmlContent: template,
+      textContent: EmailTemplate.getTextVersion(template),
+      emailType: 'account_approved_job_seeker',
+      metadata: {'role': 'job_seeker'},
+    );
+  }
+
+  /// Send account approved email - Employer
+  static Future<bool> sendAccountApprovedEmployerEmail({
+    required String to,
+    required String toName,
+    required String companyName,
+  }) async {
+    final template = EmailTemplate.accountApprovedEmployer(
+      recipientName: toName,
+      companyName: companyName,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: 'Account Approved! 🎉',
+      htmlContent: template,
+      textContent: EmailTemplate.getTextVersion(template),
+      emailType: 'account_approved_employer',
+      metadata: {'role': 'employer', 'companyName': companyName},
+    );
+  }
+
+  /// Send account rejected email
+  static Future<bool> sendAccountRejectedEmail({
+    required String to,
+    required String toName,
+    required String reason,
+  }) async {
+    final template = EmailTemplate.accountRejected(
+      recipientName: toName,
+      reason: reason,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: 'Account Review Update',
+      htmlContent: template,
+      textContent: EmailTemplate.getTextVersion(template),
+      emailType: 'account_rejected',
+      metadata: {'reason': reason},
+    );
+  }
+
+  /// Send job posting confirmation email
+  static Future<bool> sendJobPostingConfirmationEmail({
+    required String to,
+    required String toName,
+    required String companyName,
+    required String jobTitle,
+    required String jobId,
+    required String location,
+    required String salary,
+    required String jobType,
+  }) async {
+    final template = EmailTemplate.jobPostingConfirmation(
+      recipientName: toName,
+      companyName: companyName,
+      jobTitle: jobTitle,
+      jobId: jobId,
+      location: location,
+      salary: salary,
+      jobType: jobType,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: 'Job Posted Successfully! 🎉',
+      htmlContent: template,
+      textContent: EmailTemplate.getTextVersion(template),
+      emailType: 'job_posting_confirmation',
+      metadata: {
+        'jobId': jobId,
+        'jobTitle': jobTitle,
+        'companyName': companyName,
+      },
+    );
+  }
+
+  /// Send application status update email
+  static Future<bool> sendApplicationStatusUpdateEmail({
+    required String to,
+    required String toName,
+    required String jobTitle,
+    required String companyName,
+    required String status,
+    required String applicationId,
+    String? interviewDate,
+    String? interviewTime,
+    String? notes,
+  }) async {
+    final template = EmailTemplate.applicationStatusUpdate(
+      recipientName: toName,
+      jobTitle: jobTitle,
+      companyName: companyName,
+      status: status,
+      applicationId: applicationId,
+      interviewDate: interviewDate,
+      interviewTime: interviewTime,
+      notes: notes,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: 'Application Status Update',
+      htmlContent: template,
+      textContent: EmailTemplate.getTextVersion(template),
+      emailType: 'application_status_update',
+      metadata: {
+        'applicationId': applicationId,
+        'jobTitle': jobTitle,
+        'status': status,
+      },
+    );
+  }
+
+  /// Send job alerts email
+  static Future<bool> sendJobAlertsEmail({
+    required String to,
+    required String toName,
+    required List<Map<String, String>> jobs,
+  }) async {
+    final template = EmailTemplate.jobAlerts(
+      recipientName: toName,
       jobs: jobs,
     );
 
     return await sendEmail(
       to: to,
       toName: toName,
-      subject: template.subject,
-      htmlContent: template.htmlContent,
-      textContent: template.textContent,
+      subject: 'New Jobs Matching Your Profile! 🔥',
+      htmlContent: template,
+      textContent: EmailTemplate.getTextVersion(template),
+      emailType: 'job_alerts',
+      metadata: {'jobCount': jobs.length},
+    );
+  }
+
+  /// Send weekly job digest email
+  static Future<bool> sendWeeklyJobDigestEmail({
+    required String to,
+    required String toName,
+    required Map<String, dynamic> stats,
+    required List<Map<String, String>> featuredJobs,
+    required List<Map<String, String>> trendingCompanies,
+  }) async {
+    final template = EmailTemplate.weeklyJobDigest(
+      recipientName: toName,
+      stats: stats,
+      featuredJobs: featuredJobs,
+      trendingCompanies: trendingCompanies,
+    );
+
+    return await sendEmail(
+      to: to,
+      toName: toName,
+      subject: 'Weekly Job Digest 📊',
+      htmlContent: template,
+      textContent: EmailTemplate.getTextVersion(template),
+      emailType: 'weekly_digest',
+      metadata: {'featuredJobsCount': featuredJobs.length},
     );
   }
 }

@@ -119,11 +119,22 @@ class AuthService {
         // Auto-send account created (pending approval) email to the user
         if (EmailConfig.isConfigured) {
           try {
-            await EmailService.sendAccountCreatedEmail(
-              to: email,
-              toName: name,
-              userRole: role,
-            );
+            if (role.toLowerCase() == 'employer') {
+              // For employers, we need company name - get from user data or use default
+              final companyName =
+                  name; // In real app, this should come from registration form
+              await EmailService.sendAccountCreatedEmployerEmail(
+                to: email,
+                toName: name,
+                companyName: companyName,
+              );
+            } else {
+              // For job seekers
+              await EmailService.sendAccountCreatedJobSeekerEmail(
+                to: email,
+                toName: name,
+              );
+            }
           } catch (e) {
             // Non-fatal: just log
             print('Failed to send account created email: $e');

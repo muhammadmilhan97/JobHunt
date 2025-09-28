@@ -8,57 +8,54 @@ class EmailTestService {
 
     // Test 1: Account Created (Pending Approval) - Employer
     print('\n1. Testing Account Created Email (Employer):');
-    final accountCreatedTemplate = EmailTemplates.accountCreated(
+    final accountCreatedHtml = EmailTemplate.accountCreatedEmployer(
       recipientName: 'John Doe',
-      userRole: 'employer',
+      companyName: 'TechCorp Inc',
+      email: 'john@techcorp.com',
     );
-    print('✅ Subject: ${accountCreatedTemplate.subject}');
+    print('✅ HTML Content Length: ${accountCreatedHtml.length} characters');
     print(
-        '✅ HTML Content Length: ${accountCreatedTemplate.htmlContent.length} characters');
-    print(
-        '✅ Text Content Length: ${accountCreatedTemplate.textContent?.length ?? 0} characters');
+        '✅ Text Content Length: ${EmailTemplate.getTextVersion(accountCreatedHtml).length} characters');
 
     // Test 2: Approval Email - Employer
     print('\n2. Testing Approval Email (Employer):');
-    final approvalTemplate = EmailTemplates.approval(
+    final approvalHtml = EmailTemplate.accountApprovedEmployer(
       recipientName: 'John Doe',
-      userRole: 'employer',
+      companyName: 'TechCorp Inc',
     );
-    print('✅ Subject: ${approvalTemplate.subject}');
+    print('✅ HTML Content Length: ${approvalHtml.length} characters');
     print(
-        '✅ HTML Content Length: ${approvalTemplate.htmlContent.length} characters');
-    print(
-        '✅ Text Content Length: ${approvalTemplate.textContent?.length ?? 0} characters');
+        '✅ Text Content Length: ${EmailTemplate.getTextVersion(approvalHtml).length} characters');
 
     // Test 3: Job Posting Confirmation
     print('\n3. Testing Job Posting Confirmation Email:');
-    final jobConfirmationTemplate = EmailTemplates.jobPostingConfirmation(
+    final jobConfirmationHtml = EmailTemplate.jobPostingConfirmation(
       recipientName: 'John Doe',
-      jobTitle: 'Senior Flutter Developer',
       companyName: 'TechCorp Inc',
+      jobTitle: 'Senior Flutter Developer',
       jobId: 'job_123456789',
+      location: 'Karachi, Pakistan',
+      salary: 'PKR 150,000 - PKR 200,000',
+      jobType: 'Full-time',
     );
-    print('✅ Subject: ${jobConfirmationTemplate.subject}');
+    print('✅ HTML Content Length: ${jobConfirmationHtml.length} characters');
     print(
-        '✅ HTML Content Length: ${jobConfirmationTemplate.htmlContent.length} characters');
-    print(
-        '✅ Text Content Length: ${jobConfirmationTemplate.textContent?.length ?? 0} characters');
+        '✅ Text Content Length: ${EmailTemplate.getTextVersion(jobConfirmationHtml).length} characters');
 
     // Test 4: Job Seeker templates for comparison
     print('\n4. Testing Job Seeker Templates:');
-    final jobSeekerAccountTemplate = EmailTemplates.accountCreated(
+    final jobSeekerAccountHtml = EmailTemplate.accountCreatedJobSeeker(
       recipientName: 'Jane Smith',
-      userRole: 'job_seeker',
+      email: 'jane@example.com',
     );
     print(
-        '✅ Job Seeker Account Created Subject: ${jobSeekerAccountTemplate.subject}');
+        '✅ Job Seeker Account Created HTML Length: ${jobSeekerAccountHtml.length} characters');
 
-    final jobSeekerApprovalTemplate = EmailTemplates.approval(
+    final jobSeekerApprovalHtml = EmailTemplate.accountApprovedJobSeeker(
       recipientName: 'Jane Smith',
-      userRole: 'job_seeker',
     );
     print(
-        '✅ Job Seeker Approval Subject: ${jobSeekerApprovalTemplate.subject}');
+        '✅ Job Seeker Approval HTML Length: ${jobSeekerApprovalHtml.length} characters');
 
     print('\n🎉 All email templates are working correctly!');
   }

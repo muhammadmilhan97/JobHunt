@@ -13,6 +13,7 @@ import 'core/services/firebase_push_service.dart';
 import 'core/services/error_reporter.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/email_service.dart';
+import 'core/services/scheduled_email_service.dart';
 import 'core/providers/router_provider.dart';
 import 'core/providers/localization_providers.dart';
 import 'core/widgets/app_lifecycle_handler.dart';
@@ -45,6 +46,9 @@ void main() async {
     sendGridFromEnv = null;
   }
   EmailService.initialize(sendGridFromEnv);
+
+  // Initialize scheduled email services
+  ScheduledEmailService.initialize();
 
   // Set up background message handler for FCM
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

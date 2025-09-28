@@ -34,17 +34,32 @@ class EmailNotifications {
     required String name,
     required String role,
   }) async {
-    final template = EmailTemplates.accountCreated(
-      recipientName: name,
-      userRole: role,
-    );
-    final html = template.htmlContent;
+    String html;
+    String subject;
+    String text;
+
+    if (role.toLowerCase() == 'employer') {
+      html = EmailTemplate.accountCreatedEmployer(
+        recipientName: name,
+        companyName: name, // Default fallback
+        email: to,
+      );
+      subject = 'Welcome to JobHunt - Employer Account Created';
+    } else {
+      html = EmailTemplate.accountCreatedJobSeeker(
+        recipientName: name,
+        email: to,
+      );
+      subject = 'Welcome to JobHunt - Account Created';
+    }
+
+    text = EmailTemplate.getTextVersion(html);
+
     await _send(
       to: to,
-      subject: template.subject,
+      subject: subject,
       html: html,
-      text: template.textContent ??
-          'Hello $name, your account has been created and is pending admin approval. We will notify you once approved.',
+      text: text,
     );
   }
 
@@ -53,19 +68,31 @@ class EmailNotifications {
     required String name,
     required String role,
   }) async {
-    final template = EmailTemplates.approval(
-      recipientName: name,
-      userRole: role,
-    );
-    final html = template.htmlContent;
+    String html;
+    String subject;
+    String text;
+
+    if (role.toLowerCase() == 'employer') {
+      html = EmailTemplate.accountApprovedEmployer(
+        recipientName: name,
+        companyName: name, // Default fallback
+      );
+      subject = 'Account Approved! 🎉';
+    } else {
+      html = EmailTemplate.accountApprovedJobSeeker(
+        recipientName: name,
+      );
+      subject = 'Account Approved! 🎉';
+    }
+
+    text = EmailTemplate.getTextVersion(html);
+
     await _send(
       to: to,
-      subject: template.subject,
+      subject: subject,
       html: html,
-      text: template.textContent ??
-          'Hello $name, your account as a $role has been approved.',
+      text: text,
     );
-    await onWelcome(to: to, name: name, role: role);
   }
 
   static Future<void> onRejected({
@@ -74,18 +101,18 @@ class EmailNotifications {
     required String role,
     required String reason,
   }) async {
-    final template = EmailTemplates.rejection(
+    final html = EmailTemplate.accountRejected(
       recipientName: name,
-      userRole: role,
       reason: reason,
     );
-    final html = template.htmlContent;
+    final subject = 'Account Review Update';
+    final text = EmailTemplate.getTextVersion(html);
+
     await _send(
       to: to,
-      subject: template.subject,
+      subject: subject,
       html: html,
-      text: template.textContent ??
-          'Hello $name, we are unable to approve your account. Reason: $reason',
+      text: text,
     );
   }
 
@@ -94,18 +121,11 @@ class EmailNotifications {
     required String name,
     required String role,
   }) async {
-    final template = EmailTemplates.welcome(
-      recipientName: name,
-      userRole: role,
-    );
-    final html = template.htmlContent;
-    await _send(
-      to: to,
-      subject: 'Welcome to JobHunt',
-      html: html,
-      text: template.textContent ??
-          'Hello $name, welcome to JobHunt! Explore jobs and complete your profile.',
-    );
+    // Welcome emails are now handled by the approval process
+    // This method is kept for backward compatibility but does nothing
+    if (kDebugMode) {
+      print('Welcome email handled by approval process');
+    }
   }
 
   static Future<void> onJobPosted({
@@ -115,19 +135,23 @@ class EmailNotifications {
     required String company,
     required String jobId,
   }) async {
-    final template = EmailTemplates.jobPostingConfirmation(
+    final html = EmailTemplate.jobPostingConfirmation(
       recipientName: name,
-      jobTitle: jobTitle,
       companyName: company,
+      jobTitle: jobTitle,
       jobId: jobId,
+      location: 'Location', // Default fallback
+      salary: 'Salary Range', // Default fallback
+      jobType: 'Full-time', // Default fallback
     );
-    final html = template.htmlContent;
+    final subject = 'Job Posted Successfully! 🎉';
+    final text = EmailTemplate.getTextVersion(html);
+
     await _send(
       to: to,
-      subject: template.subject,
+      subject: subject,
       html: html,
-      text: template.textContent ??
-          'Hello $name, your job $jobTitle at $company has been posted.',
+      text: text,
     );
   }
 
@@ -138,19 +162,21 @@ class EmailNotifications {
     required String company,
     required String status,
   }) async {
-    final template = EmailTemplates.applicationStatus(
+    final html = EmailTemplate.applicationStatusUpdate(
       recipientName: name,
       jobTitle: jobTitle,
       companyName: company,
       status: status,
+      applicationId: 'unknown', // Default fallback
     );
-    final html = template.htmlContent;
+    final subject = 'Application Status Update';
+    final text = EmailTemplate.getTextVersion(html);
+
     await _send(
       to: to,
-      subject: template.subject,
+      subject: subject,
       html: html,
-      text: template.textContent ??
-          'Hello $name, your application for $jobTitle at $company is now $status.',
+      text: text,
     );
   }
 }
