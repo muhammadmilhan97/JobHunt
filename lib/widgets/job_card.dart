@@ -133,19 +133,29 @@ class JobCard extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    CurrencyFormatter.formatPkrRange(
-                        job.salaryMin, job.salaryMax),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                  Expanded(
+                    child: Text(
+                      CurrencyFormatter.formatPkrRange(
+                          job.salaryMin, job.salaryMax),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const Spacer(),
-                  Text(
-                    timeago.format(job.createdAt),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      timeago.format(job.createdAt),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

@@ -21,6 +21,9 @@ class EmployerDashboardPage extends ConsumerWidget {
     final currentUser = ref.watch(currentUserProvider);
     final uid = FirebaseAuth.instance.currentUser?.uid;
     print('Dashboard - Current user ID: $uid');
+    print('Dashboard - Current user: ${currentUser?.email}');
+    print('Dashboard - User role: ${currentUser?.displayName}');
+
     final jobsAsync = uid != null
         ? ref.watch(jobsByEmployerProvider(uid))
         : const AsyncValue<List<Job>>.data(const []);
@@ -35,6 +38,16 @@ class EmployerDashboardPage extends ConsumerWidget {
       appBar: BrandedAppBar(
         title: 'Employer Dashboard',
         actions: [
+          IconButton(
+            onPressed: () {
+              if (uid != null) {
+                ref.invalidate(jobsByEmployerProvider(uid));
+                ref.invalidate(applicationsForEmployerProvider(uid));
+              }
+            },
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Data',
+          ),
           IconButton(
             onPressed: () {
               context.push('/employer/post');
@@ -141,21 +154,83 @@ class EmployerDashboardPage extends ConsumerWidget {
               jobsAsync.when(
                 data: (jobs) {
                   print('Dashboard - Jobs loaded: ${jobs.length} jobs');
+                  print('Dashboard - Current user ID: $uid');
                   for (var job in jobs) {
-                    print('Job: ${job.title} - EmployerId: ${job.employerId}');
+                    print(
+                        'Job: ${job.title} - EmployerId: ${job.employerId} - Active: ${job.isActive}');
                   }
                   return applicationsAsync.when(
-                    data: (applications) =>
-                        _buildJobsList(context, jobs, applications),
+                    data: (applications) {
+                      print(
+                          'Dashboard - Applications loaded: ${applications.length} applications');
+                      return _buildJobsList(context, jobs, applications);
+                    },
                     loading: () => _buildJobsShimmer(),
-                    error: (error, stack) =>
-                        _buildErrorState(context, error.toString()),
+                    error: (error, stack) {
+                      print('Dashboard - Error loading applications: $error');
+                      return _buildErrorState(context, error.toString());
+                    },
                   );
                 },
-                loading: () => _buildJobsShimmer(),
+                loading: () {
+                  print('Dashboard - Loading jobs...');
+                  return _buildJobsShimmer();
+                },
                 error: (error, stack) {
                   print('Dashboard - Error loading jobs: $error');
-                  return _buildErrorState(context, error.toString());
+                  print('Dashboard - Error details: $stack');
+
+                  // Show more detailed error information
+                  return Card(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Failed to load jobs',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Error: $error',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey.shade500,
+                                    ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (uid != null) {
+                                ref.invalidate(jobsByEmployerProvider(uid));
+                              }
+                            },
+                            child: const Text('Retry'),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () {
+                              // Simple retry with refresh
+                              if (uid != null) {
+                                ref.invalidate(jobsByEmployerProvider(uid));
+                                ref.invalidate(
+                                    applicationsForEmployerProvider(uid));
+                              }
+                            },
+                            child: const Text('Refresh Data'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 },
               ),
             ],

@@ -21,8 +21,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   _checkAuthAndNavigate() async {
-    print('🚀 Splash screen started - will display for 4 seconds');
-    await Future.delayed(const Duration(seconds: 4));
+    print('🚀 Splash screen started - will display for 12 seconds');
+    await Future.delayed(const Duration(seconds: 12));
 
     if (!mounted) return;
 
@@ -114,6 +114,32 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       ),
       child: LogoSplashWidget(
         subtitle: 'Find Your Dream Job',
+        child: Column(
+          children: [
+            const SizedBox(height: 32),
+            RichText(
+              text: TextSpan(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.black,
+                      fontSize: 16,
+                    ),
+                children: [
+                  const TextSpan(text: 'Made with '),
+                  TextSpan(
+                    text: '❤',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const TextSpan(text: ' by Muhammad Milhan'),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

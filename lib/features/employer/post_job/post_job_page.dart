@@ -793,6 +793,16 @@ class _PostJobPageState extends ConsumerState<PostJobPage> {
 
       if (mounted) {
         formController.reset();
+
+        // Invalidate providers to refresh data
+        if (widget.jobId == null) {
+          // New job created - refresh jobs list
+          ref.invalidate(jobsByEmployerProvider(employerId));
+        } else {
+          // Job updated - refresh specific job
+          ref.invalidate(jobsByEmployerProvider(employerId));
+        }
+
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -6,6 +6,7 @@ import '../../../core/models/application.dart';
 import '../../../core/providers/applications_providers.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../core/services/email_service.dart';
+import '../../../core/repository/user_repository.dart';
 import '../../../core/widgets/app_logo.dart';
 
 class EmployerApplicantsPage extends ConsumerWidget {
@@ -269,19 +270,24 @@ ${application.employerName} Team
       }
 
       if (subject.isNotEmpty && message.isNotEmpty) {
-        await EmailService.sendEmail(
-          to: 'candidate@example.com', // In real app, get from user profile
-          toName: 'Candidate',
-          subject: subject,
-          htmlContent: message.replaceAll('\n', '<br>'),
-          textContent: message,
-          emailType: 'application_status_update',
-          metadata: {
-            'applicationId': application.id,
-            'jobId': application.jobId,
-            'newStatus': newStatus,
-          },
-        );
+        // Get job seeker details for proper email
+        try {
+          final userRepo = UserRepository();
+          final jobSeeker = await userRepo.getUserById(application.jobSeekerId);
+
+          if (jobSeeker != null && jobSeeker.emailNotifications) {
+            await EmailService.sendApplicationStatusUpdateEmail(
+              to: jobSeeker.email,
+              toName: jobSeeker.name,
+              jobTitle: application.jobTitle ?? 'Job Position',
+              companyName: application.employerName ?? 'Company',
+              status: newStatus,
+              applicationId: application.id,
+            );
+          }
+        } catch (e) {
+          print('Error getting job seeker details for email: $e');
+        }
       }
     } catch (e) {
       print('Error sending status update email: $e');
@@ -792,38 +798,29 @@ class _ScheduleInterviewDialogState extends State<_ScheduleInterviewDialog> {
 
   Future<void> _sendInterviewScheduledEmail() async {
     try {
-      final subject = 'Interview Scheduled - ${widget.application.jobTitle}';
-      final message = '''
-Dear Candidate,
+      // Get job seeker details for proper email
+      try {
+        final userRepo = UserRepository();
+        final jobSeeker =
+            await userRepo.getUserById(widget.application.jobSeekerId);
 
-We are pleased to inform you that an interview has been scheduled for the ${widget.application.jobTitle} position.
-
-Interview Details:
-- Date: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}
-- Time: ${selectedTime.format(context)}
-- Type: $interviewType
-
-We look forward to speaking with you.
-
-Best regards,
-${widget.application.employerName} Team
-''';
-
-      await EmailService.sendEmail(
-        to: 'candidate@example.com', // In real app, get from user profile
-        toName: 'Candidate',
-        subject: subject,
-        htmlContent: message.replaceAll('\n', '<br>'),
-        textContent: message,
-        emailType: 'interview_scheduled',
-        metadata: {
-          'applicationId': widget.application.id,
-          'jobId': widget.application.jobId,
-          'interviewDate': selectedDate.toIso8601String(),
-          'interviewTime': '${selectedTime.hour}:${selectedTime.minute}',
-          'interviewType': interviewType,
-        },
-      );
+        if (jobSeeker != null && jobSeeker.emailNotifications) {
+          await EmailService.sendApplicationStatusUpdateEmail(
+            to: jobSeeker.email,
+            toName: jobSeeker.name,
+            jobTitle: widget.application.jobTitle ?? 'Job Position',
+            companyName: widget.application.employerName ?? 'Company',
+            status: 'interviewing',
+            applicationId: widget.application.id,
+            interviewDate:
+                '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+            interviewTime: selectedTime.format(context),
+            notes: 'Interview Type: $interviewType',
+          );
+        }
+      } catch (e) {
+        print('Error getting job seeker details for interview email: $e');
+      }
     } catch (e) {
       print('Error sending interview scheduled email: $e');
     }
